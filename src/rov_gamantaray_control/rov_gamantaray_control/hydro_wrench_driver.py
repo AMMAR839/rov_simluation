@@ -16,18 +16,21 @@ def yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
 
 
 class HydroWrenchDriver(Node):
-    """Apply allocator thruster output as a persistent Gazebo link wrench."""
+    """Apply allocator thruster output as a persistent Gazebo wrench."""
 
     def __init__(self) -> None:
         super().__init__("hydro_wrench_driver")
         self.declare_parameter("world_name", "kki_rov_pool")
-        self.declare_parameter("entity_name", "gamantaray_rov::base_link")
-        self.declare_parameter("horizontal_force_gain", 0.05)
-        self.declare_parameter("vertical_force_gain", 0.12)
-        self.declare_parameter("yaw_torque_gain", 0.015)
+        self.declare_parameter("entity_name", "gamantaray_rov")
+        self.declare_parameter("entity_type", "model")
+        self.declare_parameter("horizontal_force_gain", 2.00)
+        self.declare_parameter("vertical_force_gain", 0.80)
+        self.declare_parameter("yaw_torque_gain", 0.20)
 
         self.world_name = str(self.get_parameter("world_name").value)
         self.entity_name = str(self.get_parameter("entity_name").value)
+        self.entity_type_name = str(self.get_parameter("entity_type").value).lower()
+        self.entity_type = self.resolve_entity_type(self.entity_type_name)
         self.horizontal_gain = float(self.get_parameter("horizontal_force_gain").value)
         self.vertical_gain = float(self.get_parameter("vertical_force_gain").value)
         self.yaw_gain = float(self.get_parameter("yaw_torque_gain").value)
@@ -46,6 +49,16 @@ class HydroWrenchDriver(Node):
         )
         self.create_subscription(Odometry, "/model/gamantaray_rov/odometry", self.odom_callback, 10)
         self.create_timer(0.05, self.update)
+
+    def resolve_entity_type(self, value: str) -> int:
+        if value == "model":
+            return Entity.MODEL
+        if value == "link":
+            return Entity.LINK
+        self.get_logger().warning(
+            f"Unknown entity_type '{value}', using 'model'. Valid values: model, link."
+        )
+        return Entity.MODEL
 
     def thruster_callback(self, msg: Float64MultiArray) -> None:
         if len(msg.data) >= 6:
@@ -72,7 +85,7 @@ class HydroWrenchDriver(Node):
     def publish_wrench(self, force_x: float, force_y: float, force_z: float, torque_z: float) -> None:
         msg = EntityWrench()
         msg.entity.name = self.entity_name
-        msg.entity.type = Entity.LINK
+        msg.entity.type = self.entity_type
         msg.wrench.force.x = float(force_x)
         msg.wrench.force.y = float(force_y)
         msg.wrench.force.z = float(force_z)
@@ -83,7 +96,7 @@ class HydroWrenchDriver(Node):
         self.publish_wrench(0.0, 0.0, 0.0, 0.0)
         msg = Entity()
         msg.name = self.entity_name
-        msg.type = Entity.LINK
+        msg.type = self.entity_type
         self.clear_pub.publish(msg)
 
 

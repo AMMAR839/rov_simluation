@@ -52,6 +52,12 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
   joystick_axis_surge:=1 joystick_axis_sway:=0 joystick_axis_heave:=3 joystick_axis_yaw:=2
 ```
 
+Jika analog maju/mundur kebalik:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true joystick_invert_surge:=false
+```
+
 Jika ingin deadman button, misalnya ROV hanya bergerak saat tombol `LB` ditahan, isi nomor button sesuai stik:
 
 ```bash
@@ -94,11 +100,23 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_vari
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=bluerov
 ```
 
-Mode hydro eksperimental:
+Mode hydro dengan kontrol yang tetap responsif:
 
 ```bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=hydro
 ```
+
+Catatan: mulai versi ini, `physics_mode:=hydro` tetap memakai `hydro_control_mode:=kinematic` sebagai default. Artinya world memakai suasana bawah air dan plugin air, tetapi gerak ROV tetap dikendalikan oleh driver kinematic agar analog stik langsung terasa dan tidak macet oleh tuning hidrodinamika.
+
+Mode wrench hydro murni masih ada untuk eksperimen fisika:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=hydro \
+  hydro_control_mode:=wrench \
+  hydro_horizontal_force_gain:=2.00 hydro_vertical_force_gain:=0.80 hydro_yaw_torque_gain:=0.20
+```
+
+Kalau memakai `hydro_control_mode:=wrench` dan analog terasa tidak maju, itu masalah tuning gaya/damping hidrodinamika, bukan stik.
 
 ## Kontrol Keyboard Opsional
 

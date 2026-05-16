@@ -103,6 +103,10 @@ joystick_axis_surge=1
 joystick_axis_sway=0
 joystick_axis_heave=3
 joystick_axis_yaw=2
+joystick_invert_surge=true
+joystick_invert_sway=true
+joystick_invert_heave=true
+joystick_invert_yaw=false
 joystick_deadzone=0.08
 joystick_linear_scale=0.75
 joystick_vertical_scale=0.55
@@ -117,6 +121,12 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
   joystick_axis_sway:=0 \
   joystick_axis_heave:=3 \
   joystick_axis_yaw:=2
+```
+
+Contoh kalau maju/mundur kebalik:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true joystick_invert_surge:=false
 ```
 
 Contoh mengurangi sensitivitas:
@@ -379,19 +389,45 @@ Catatan:
 
 ## 12. Mode Hydro Eksperimental
 
-Mode default adalah kinematic. Mode hydro tersedia untuk eksperimen:
+Mode default adalah kinematic. Mode hydro tersedia untuk visual bawah air dengan kontrol tetap responsif:
 
 ```bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=hydro
 ```
 
-Mode hydro memasukkan plugin buoyancy dan apply wrench. Node `hydro_wrench_driver` mengubah nilai thruster menjadi wrench di Gazebo.
+Secara default, command di atas memakai:
+
+```text
+hydro_control_mode:=kinematic
+```
+
+Artinya world memakai suasana bawah air dan plugin air, tetapi gerak ROV tetap memakai `kinematic_driver`. Ini sengaja dipakai supaya analog stik langsung menggerakkan ROV dan real-time tidak jatuh.
 
 Gunakan mode ini jika ingin eksperimen fisika. Untuk latihan misi dan real-time yang stabil, tetap gunakan mode default:
 
 ```bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=kinematic
 ```
+
+Mode wrench hydro murni masih tersedia:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=hydro \
+  hydro_control_mode:=wrench \
+  hydro_horizontal_force_gain:=2.00 \
+  hydro_vertical_force_gain:=0.80 \
+  hydro_yaw_torque_gain:=0.20
+```
+
+Nilai yang bisa dituning:
+
+```text
+hydro_horizontal_force_gain -> kuat maju/mundur dan geser
+hydro_vertical_force_gain   -> kuat naik/turun
+hydro_yaw_torque_gain       -> kuat yaw
+```
+
+Jika analog maju normal di `hydro_control_mode:=kinematic`, tetapi tidak maju di `hydro_control_mode:=wrench`, berarti masalahnya ada di tuning gaya wrench, buoyancy, damping, dan hydrodynamics, bukan di stik.
 
 Batasan hydro:
 

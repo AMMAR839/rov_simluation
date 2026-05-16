@@ -411,6 +411,20 @@ Aktif dengan:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py physics_mode:=hydro
 ```
 
+Default `physics_mode:=hydro` sekarang memakai:
+
+```text
+hydro_control_mode:=kinematic
+```
+
+Alasannya praktis: world tetap menampilkan suasana bawah air, tetapi gerak ROV tetap responsif untuk latihan misi. Pada mode ini, `kinematic_driver` tetap membaca `/rov/thruster_status` dan menggerakkan pose ROV, sama seperti mode utama.
+
+Mode wrench hydro murni diaktifkan dengan:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py physics_mode:=hydro hydro_control_mode:=wrench
+```
+
 Metode:
 
 1. Launch memasukkan plugin Gazebo:
@@ -432,6 +446,28 @@ body_tz = (-t1 + t2 - t3 + t4) * yaw_gain
 ```text
 /world/kki_rov_pool/wrench/persistent
 ```
+
+Entity wrench dipublish ke model:
+
+```text
+gamantaray_rov
+```
+
+Tipe entity:
+
+```text
+MODEL
+```
+
+Parameter gain hydro bisa dituning dari launch:
+
+```text
+hydro_horizontal_force_gain
+hydro_vertical_force_gain
+hydro_yaw_torque_gain
+```
+
+Jika analog stik sudah menghasilkan `/rov/thruster_status`, tetapi ROV hampir tidak maju pada `hydro_control_mode:=wrench`, penyebabnya ada di tuning gaya wrench, buoyancy, damping, dan hydrodynamics. Mode ini belum menjadi jalur latihan utama.
 
 Batasan mode hydro:
 

@@ -23,18 +23,28 @@ def launch_setup(context, *args, **kwargs):
     joystick_axis_sway = LaunchConfiguration("joystick_axis_sway")
     joystick_axis_heave = LaunchConfiguration("joystick_axis_heave")
     joystick_axis_yaw = LaunchConfiguration("joystick_axis_yaw")
+    joystick_invert_surge = LaunchConfiguration("joystick_invert_surge")
+    joystick_invert_sway = LaunchConfiguration("joystick_invert_sway")
+    joystick_invert_heave = LaunchConfiguration("joystick_invert_heave")
+    joystick_invert_yaw = LaunchConfiguration("joystick_invert_yaw")
     joystick_deadzone = LaunchConfiguration("joystick_deadzone")
     joystick_linear_scale = LaunchConfiguration("joystick_linear_scale")
     joystick_vertical_scale = LaunchConfiguration("joystick_vertical_scale")
     joystick_yaw_scale = LaunchConfiguration("joystick_yaw_scale")
     joystick_enable_button = LaunchConfiguration("joystick_enable_button")
+    hydro_horizontal_force_gain = LaunchConfiguration("hydro_horizontal_force_gain")
+    hydro_vertical_force_gain = LaunchConfiguration("hydro_vertical_force_gain")
+    hydro_yaw_torque_gain = LaunchConfiguration("hydro_yaw_torque_gain")
     physics_mode = LaunchConfiguration("physics_mode").perform(context).lower()
+    hydro_control_mode = LaunchConfiguration("hydro_control_mode").perform(context).lower()
     rov_variant = LaunchConfiguration("rov_variant").perform(context).lower()
     payload_code = LaunchConfiguration("payload_code").perform(context).upper()
     if payload_code not in VALID_PAYLOADS:
         raise RuntimeError("payload_code must be one of A, B, C, or D")
     if physics_mode not in {"kinematic", "hydro"}:
         raise RuntimeError("physics_mode must be kinematic or hydro")
+    if hydro_control_mode not in {"kinematic", "wrench"}:
+        raise RuntimeError("hydro_control_mode must be kinematic or wrench")
     if rov_variant not in {"github_blue", "bluerov"}:
         raise RuntimeError("rov_variant must be github_blue or bluerov")
 
@@ -177,8 +187,9 @@ def launch_setup(context, *args, **kwargs):
         "/rov/thruster4/cmd@std_msgs/msg/Float64]gz.msgs.Double",
         "/rov/thruster5/cmd@std_msgs/msg/Float64]gz.msgs.Double",
         "/rov/thruster6/cmd@std_msgs/msg/Float64]gz.msgs.Double",
-        "/model/gamantaray_rov/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry",
     ]
+    if physics_mode == "hydro" and hydro_control_mode == "wrench":
+        bridges.append("/model/gamantaray_rov/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry")
 
     actions = [
         SetEnvironmentVariable(
@@ -208,7 +219,7 @@ def launch_setup(context, *args, **kwargs):
         ),
     ]
 
-    if physics_mode == "kinematic":
+    if physics_mode == "kinematic" or hydro_control_mode == "kinematic":
         actions.append(
             Node(
                 package="rov_gamantaray_control",
@@ -239,6 +250,11 @@ def launch_setup(context, *args, **kwargs):
                     {
                         "use_sim_time": True,
                         "world_name": "kki_rov_pool",
+                        "entity_name": "gamantaray_rov",
+                        "entity_type": "model",
+                        "horizontal_force_gain": hydro_horizontal_force_gain,
+                        "vertical_force_gain": hydro_vertical_force_gain,
+                        "yaw_torque_gain": hydro_yaw_torque_gain,
                     }
                 ],
             )
@@ -306,6 +322,10 @@ def launch_setup(context, *args, **kwargs):
                         "axis_sway": joystick_axis_sway,
                         "axis_heave": joystick_axis_heave,
                         "axis_yaw": joystick_axis_yaw,
+                        "invert_surge": joystick_invert_surge,
+                        "invert_sway": joystick_invert_sway,
+                        "invert_heave": joystick_invert_heave,
+                        "invert_yaw": joystick_invert_yaw,
                         "deadzone": joystick_deadzone,
                         "linear_scale": joystick_linear_scale,
                         "vertical_scale": joystick_vertical_scale,
@@ -333,12 +353,20 @@ def generate_launch_description():
             DeclareLaunchArgument("joystick_axis_sway", default_value="0"),
             DeclareLaunchArgument("joystick_axis_heave", default_value="3"),
             DeclareLaunchArgument("joystick_axis_yaw", default_value="2"),
+            DeclareLaunchArgument("joystick_invert_surge", default_value="true"),
+            DeclareLaunchArgument("joystick_invert_sway", default_value="true"),
+            DeclareLaunchArgument("joystick_invert_heave", default_value="true"),
+            DeclareLaunchArgument("joystick_invert_yaw", default_value="false"),
             DeclareLaunchArgument("joystick_deadzone", default_value="0.08"),
             DeclareLaunchArgument("joystick_linear_scale", default_value="0.75"),
             DeclareLaunchArgument("joystick_vertical_scale", default_value="0.55"),
             DeclareLaunchArgument("joystick_yaw_scale", default_value="0.65"),
             DeclareLaunchArgument("joystick_enable_button", default_value="-1"),
+            DeclareLaunchArgument("hydro_horizontal_force_gain", default_value="2.00"),
+            DeclareLaunchArgument("hydro_vertical_force_gain", default_value="0.80"),
+            DeclareLaunchArgument("hydro_yaw_torque_gain", default_value="0.20"),
             DeclareLaunchArgument("physics_mode", default_value="kinematic"),
+            DeclareLaunchArgument("hydro_control_mode", default_value="kinematic"),
             DeclareLaunchArgument("rov_variant", default_value="github_blue"),
             OpaqueFunction(function=launch_setup),
         ]
