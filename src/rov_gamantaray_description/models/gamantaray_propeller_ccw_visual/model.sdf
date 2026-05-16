@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="gamantaray_propeller_ccw_visual">
+    <static>true</static>
+    <link name="link">
+      <visual name="hub">
+        <pose>0 0 0 0 1.5707963268 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.009</radius>
+            <length>0.012</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.015 0.018 0.020 1</ambient>
+          <diffuse>0.020 0.026 0.030 1</diffuse>
+          <specular>0.18 0.22 0.24 1</specular>
+        </material>
+      </visual>
+      <visual name="propeller_visual">
+        <pose>0 0.014 0 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.034 0.003</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.018 0.020 0.022 1</ambient>
+          <diffuse>0.025 0.030 0.034 1</diffuse>
+          <specular>0.18 0.22 0.24 1</specular>
+        </material>
+      </visual>
+      <visual name="propeller_blade_2">
+        <pose>0 -0.007 0.0121243557 2.0943951024 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.034 0.003</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.018 0.020 0.022 1</ambient>
+          <diffuse>0.025 0.030 0.034 1</diffuse>
+          <specular>0.18 0.22 0.24 1</specular>
+        </material>
+      </visual>
+      <visual name="propeller_blade_3">
+        <pose>0 -0.007 -0.0121243557 -2.0943951024 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.004 0.034 0.003</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.018 0.020 0.022 1</ambient>
+          <diffuse>0.025 0.030 0.034 1</diffuse>
+          <specular>0.18 0.22 0.24 1</specular>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

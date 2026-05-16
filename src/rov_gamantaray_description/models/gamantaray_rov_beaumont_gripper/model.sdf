@@ -1,0 +1,102 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="gamantaray_rov_beaumont_gripper">
+    <static>true</static>
+    <self_collide>false</self_collide>
+
+    <link name="base_link">
+      <inertial>
+        <mass>23.0</mass>
+        <pose>0 0 -0.035 0 0 0</pose>
+        <inertia>
+          <ixx>0.347</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.255</iyy>
+          <iyz>0</iyz>
+          <izz>0.333</izz>
+        </inertia>
+      </inertial>
+
+      <collision name="body_collision">
+        <pose>0.07 0 0.02 0 0 0</pose>
+        <geometry><box><size>0.50 0.44 0.27</size></box></geometry>
+      </collision>
+
+      <visual name="body_visual">
+        <pose>-0.08 0 -0.03 0 0 -1.5707963268</pose>
+        <geometry>
+          <mesh>
+            <uri>model://gamantaray_rov_beaumont_gripper/meshes/beaumont.stl</uri>
+            <scale>0.90 0.90 0.90</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.02 0.08 0.12 1</ambient>
+          <diffuse>0.03 0.22 0.32 1</diffuse>
+          <specular>0.18 0.24 0.26 1</specular>
+        </material>
+      </visual>
+
+      <visual name="integrated_gripper_mount">
+        <pose>0.235 0 -0.125 0 0 0</pose>
+        <geometry><box><size>0.080 0.135 0.060</size></box></geometry>
+        <material>
+          <ambient>0.018 0.020 0.022 1</ambient>
+          <diffuse>0.030 0.032 0.034 1</diffuse>
+          <specular>0.18 0.18 0.18 1</specular>
+        </material>
+      </visual>
+      <visual name="integrated_gripper_pin">
+        <pose>0.260 0 -0.136 1.5707963268 0 0</pose>
+        <geometry><cylinder><radius>0.011</radius><length>0.145</length></cylinder></geometry>
+        <material>
+          <ambient>0.10 0.11 0.11 1</ambient>
+          <diffuse>0.18 0.19 0.19 1</diffuse>
+          <specular>0.40 0.40 0.38 1</specular>
+        </material>
+      </visual>
+
+      <visual name="front_camera_housing">
+        <pose>0.255 0 -0.020 0 1.5707963268 0</pose>
+        <geometry><cylinder><radius>0.020</radius><length>0.030</length></cylinder></geometry>
+        <material><ambient>0.025 0.025 0.025 1</ambient><diffuse>0.045 0.045 0.045 1</diffuse></material>
+      </visual>
+      <visual name="bottom_camera_housing">
+        <pose>0.05 0 -0.150 0 0 0</pose>
+        <geometry><cylinder><radius>0.017</radius><length>0.020</length></cylinder></geometry>
+        <material><ambient>0.025 0.025 0.025 1</ambient><diffuse>0.045 0.045 0.045 1</diffuse></material>
+      </visual>
+
+      <sensor name="imu" type="imu">
+        <always_on>true</always_on>
+        <update_rate>100</update_rate>
+        <topic>/rov/imu</topic>
+      </sensor>
+      <sensor name="wall_camera" type="camera">
+        <pose>0.265 0 -0.020 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>12</update_rate>
+        <visualize>false</visualize>
+        <topic>/rov/camera/wall/image</topic>
+        <camera>
+          <horizontal_fov>1.20</horizontal_fov>
+          <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+          <clip><near>0.02</near><far>12.0</far></clip>
+        </camera>
+      </sensor>
+      <sensor name="bottom_camera" type="camera">
+        <pose>0.05 0 -0.160 0 1.5707963268 0</pose>
+        <always_on>true</always_on>
+        <update_rate>12</update_rate>
+        <visualize>false</visualize>
+        <topic>/rov/camera/bottom/image</topic>
+        <camera>
+          <horizontal_fov>1.35</horizontal_fov>
+          <image><width>640</width><height>480</height><format>R8G8B8</format></image>
+          <clip><near>0.02</near><far>6.0</far></clip>
+        </camera>
+      </sensor>
+    </link>
+  </model>
+</sdf>

@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="gamantaray_gripper_right_jaw_visual">
+    <static>true</static>
+    <link name="jaw_link">
+      <visual name="pivot_pin">
+        <pose>0 0 0 0 0 0</pose>
+        <geometry><cylinder><radius>0.012</radius><length>0.028</length></cylinder></geometry>
+        <material>
+          <ambient>0.10 0.11 0.11 1</ambient>
+          <diffuse>0.16 0.17 0.17 1</diffuse>
+          <specular>0.35 0.35 0.34 1</specular>
+        </material>
+      </visual>
+      <visual name="main_finger">
+        <pose>0.060 0 0 0 0 0</pose>
+        <geometry><box><size>0.125 0.018 0.020</size></box></geometry>
+        <material>
+          <ambient>0.010 0.011 0.012 1</ambient>
+          <diffuse>0.020 0.022 0.024 1</diffuse>
+          <specular>0.18 0.18 0.18 1</specular>
+        </material>
+      </visual>
+      <visual name="inner_pad">
+        <pose>0.080 0.014 0 0 0 0</pose>
+        <geometry><box><size>0.060 0.010 0.024</size></box></geometry>
+        <material>
+          <ambient>0.002 0.002 0.002 1</ambient>
+          <diffuse>0.006 0.006 0.006 1</diffuse>
+        </material>
+      </visual>
+      <visual name="curved_tip">
+        <pose>0.122 0.018 0 0 0 0.72</pose>
+        <geometry><box><size>0.052 0.017 0.020</size></box></geometry>
+        <material>
+          <ambient>0.010 0.011 0.012 1</ambient>
+          <diffuse>0.020 0.022 0.024 1</diffuse>
+          <specular>0.18 0.18 0.18 1</specular>
+        </material>
+      </visual>
+      <visual name="side_truss">
+        <pose>0.045 -0.013 -0.006 0.00 0.32 0</pose>
+        <geometry><box><size>0.075 0.006 0.008</size></box></geometry>
+        <material>
+          <ambient>0.012 0.013 0.014 1</ambient>
+          <diffuse>0.022 0.024 0.026 1</diffuse>
+        </material>
+      </visual>
+    </link>
+  </model>
+</sdf>

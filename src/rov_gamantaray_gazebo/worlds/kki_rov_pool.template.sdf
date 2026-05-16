@@ -1,0 +1,352 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <world name="kki_rov_pool">
+    <physics name="underwater_physics" type="ode">
+      <max_step_size>@PHYSICS_STEP_SIZE@</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    @HYDRO_WORLD_PLUGINS@
+
+    <scene>
+      <ambient>0.07 0.16 0.19 1</ambient>
+      <background>0.005 0.030 0.045 1</background>
+      <grid>false</grid>
+      <fog>
+        <type>linear</type>
+        <color>0.02 0.13 0.16 1</color>
+        <start>1.8</start>
+        <end>8.5</end>
+        <density>0.08</density>
+      </fog>
+    </scene>
+
+    <light type="directional" name="sun">
+      <pose>0 0 6 0 0 0</pose>
+      <cast_shadows>true</cast_shadows>
+      <diffuse>0.62 0.82 0.92 1</diffuse>
+      <specular>0.55 0.70 0.75 1</specular>
+      <direction>-0.4 0.2 -0.9</direction>
+    </light>
+
+    <light type="point" name="pool_fill_light">
+      <pose>0 0 1.4 0 0 0</pose>
+      <diffuse>0.12 0.46 0.58 1</diffuse>
+      <specular>0.28 0.52 0.60 1</specular>
+      <attenuation>
+        <range>12</range>
+        <linear>0.06</linear>
+        <constant>0.35</constant>
+        <quadratic>0.01</quadratic>
+      </attenuation>
+    </light>
+
+    <model name="pool_floor">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><box><size>10.0 10.0 0.06</size></box></geometry></collision>
+        <visual name="visual">
+          <geometry><box><size>10.0 10.0 0.06</size></box></geometry>
+          <material><ambient>0.38 0.50 0.55 1</ambient><diffuse>0.42 0.58 0.63 1</diffuse></material>
+        </visual>
+      </link>
+      <pose>0 0 -0.88 0 0 0</pose>
+    </model>
+
+    <model name="pool_floor_markings">
+      <static>true</static>
+      <pose>0 0 -0.842 0 0 0</pose>
+      <link name="link">
+        <visual name="center_line_x">
+          <geometry><box><size>9.2 0.025 0.004</size></box></geometry>
+          <material><ambient>0.86 0.90 0.88 0.45</ambient><diffuse>0.86 0.90 0.88 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="center_line_y">
+          <geometry><box><size>0.025 9.2 0.004</size></box></geometry>
+          <material><ambient>0.86 0.90 0.88 0.45</ambient><diffuse>0.86 0.90 0.88 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="tile_line_x_neg">
+          <pose>-2.5 0 0 0 0 0</pose>
+          <geometry><box><size>0.016 9.2 0.004</size></box></geometry>
+          <material><ambient>0.70 0.82 0.84 0.32</ambient><diffuse>0.70 0.82 0.84 0.32</diffuse></material>
+          <transparency>0.68</transparency>
+        </visual>
+        <visual name="tile_line_x_pos">
+          <pose>2.5 0 0 0 0 0</pose>
+          <geometry><box><size>0.016 9.2 0.004</size></box></geometry>
+          <material><ambient>0.70 0.82 0.84 0.32</ambient><diffuse>0.70 0.82 0.84 0.32</diffuse></material>
+          <transparency>0.68</transparency>
+        </visual>
+        <visual name="tile_line_y_neg">
+          <pose>0 -2.5 0 0 0 0</pose>
+          <geometry><box><size>9.2 0.016 0.004</size></box></geometry>
+          <material><ambient>0.70 0.82 0.84 0.32</ambient><diffuse>0.70 0.82 0.84 0.32</diffuse></material>
+          <transparency>0.68</transparency>
+        </visual>
+        <visual name="tile_line_y_pos">
+          <pose>0 2.5 0 0 0 0</pose>
+          <geometry><box><size>9.2 0.016 0.004</size></box></geometry>
+          <material><ambient>0.70 0.82 0.84 0.32</ambient><diffuse>0.70 0.82 0.84 0.32</diffuse></material>
+          <transparency>0.68</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <model name="water_surface">
+      <static>true</static>
+      <link name="link">
+        <visual name="surface_visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>10.0 10.0</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.015 0.16 0.22 0.26</ambient>
+            <diffuse>0.03 0.38 0.50 0.26</diffuse>
+            <specular>0.92 0.98 1.0 0.95</specular>
+          </material>
+          <transparency>0.42</transparency>
+        </visual>
+        <visual name="surface_under_glass">
+          <pose>0 0 -0.010 0 0 0</pose>
+          <geometry><box><size>9.95 9.95 0.006</size></box></geometry>
+          <material>
+            <ambient>0.00 0.18 0.24 0.16</ambient>
+            <diffuse>0.02 0.32 0.42 0.16</diffuse>
+            <specular>0.85 0.96 1.0 0.75</specular>
+          </material>
+          <transparency>0.86</transparency>
+        </visual>
+        <visual name="surface_highlight_x">
+          <pose>0 0 0.004 0 0 0</pose>
+          <geometry><box><size>9.7 0.035 0.003</size></box></geometry>
+          <material><ambient>0.75 0.95 1.0 0.45</ambient><diffuse>0.75 0.95 1.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+        <visual name="surface_highlight_y">
+          <pose>0 0 0.006 0 0 0</pose>
+          <geometry><box><size>0.035 9.7 0.003</size></box></geometry>
+          <material><ambient>0.75 0.95 1.0 0.45</ambient><diffuse>0.75 0.95 1.0 0.45</diffuse></material>
+          <transparency>0.55</transparency>
+        </visual>
+      </link>
+      <pose>0 0 0 0 0 0</pose>
+    </model>
+
+    <model name="water_surface_ripples">
+      <static>true</static>
+      <pose>0 0 0.012 0 0 0</pose>
+      <link name="link">
+        <visual name="ripple_1"><pose>-3.8 -3.5 0 0 0 0.18</pose><geometry><box><size>1.8 0.020 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.30</ambient><diffuse>0.82 0.97 1.0 0.30</diffuse><specular>0.85 0.95 1.0 0.45</specular></material><transparency>0.70</transparency></visual>
+        <visual name="ripple_2"><pose>-2.2 -2.1 0 0 0 -0.34</pose><geometry><box><size>2.5 0.018 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.26</ambient><diffuse>0.82 0.97 1.0 0.26</diffuse><specular>0.85 0.95 1.0 0.40</specular></material><transparency>0.74</transparency></visual>
+        <visual name="ripple_3"><pose>0.6 -3.4 0 0 0 0.41</pose><geometry><box><size>2.2 0.016 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.22</ambient><diffuse>0.82 0.97 1.0 0.22</diffuse><specular>0.85 0.95 1.0 0.38</specular></material><transparency>0.78</transparency></visual>
+        <visual name="ripple_4"><pose>3.3 -2.4 0 0 0 -0.22</pose><geometry><box><size>1.7 0.018 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.26</ambient><diffuse>0.82 0.97 1.0 0.26</diffuse><specular>0.85 0.95 1.0 0.40</specular></material><transparency>0.74</transparency></visual>
+        <visual name="ripple_5"><pose>-4.0 -0.6 0 0 0 -0.12</pose><geometry><box><size>2.3 0.020 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.30</ambient><diffuse>0.82 0.97 1.0 0.30</diffuse><specular>0.85 0.95 1.0 0.45</specular></material><transparency>0.70</transparency></visual>
+        <visual name="ripple_6"><pose>-1.1 0.3 0 0 0 0.28</pose><geometry><box><size>2.9 0.018 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.22</ambient><diffuse>0.82 0.97 1.0 0.22</diffuse><specular>0.85 0.95 1.0 0.38</specular></material><transparency>0.78</transparency></visual>
+        <visual name="ripple_7"><pose>2.5 0.4 0 0 0 -0.39</pose><geometry><box><size>2.4 0.016 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.24</ambient><diffuse>0.82 0.97 1.0 0.24</diffuse><specular>0.85 0.95 1.0 0.38</specular></material><transparency>0.76</transparency></visual>
+        <visual name="ripple_8"><pose>-3.2 2.0 0 0 0 0.36</pose><geometry><box><size>1.9 0.018 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.28</ambient><diffuse>0.82 0.97 1.0 0.28</diffuse><specular>0.85 0.95 1.0 0.42</specular></material><transparency>0.72</transparency></visual>
+        <visual name="ripple_9"><pose>0.0 2.8 0 0 0 -0.24</pose><geometry><box><size>3.0 0.017 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.22</ambient><diffuse>0.82 0.97 1.0 0.22</diffuse><specular>0.85 0.95 1.0 0.38</specular></material><transparency>0.78</transparency></visual>
+        <visual name="ripple_10"><pose>3.4 3.1 0 0 0 0.17</pose><geometry><box><size>2.1 0.020 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.30</ambient><diffuse>0.82 0.97 1.0 0.30</diffuse><specular>0.85 0.95 1.0 0.45</specular></material><transparency>0.70</transparency></visual>
+      </link>
+    </model>
+
+    <model name="water_volume">
+      <static>true</static>
+      <pose>0 0 -0.43 0 0 0</pose>
+      <link name="link">
+        <visual name="volume_visual">
+          <geometry><box><size>9.9 9.9 0.84</size></box></geometry>
+          <material>
+            <ambient>0.00 0.16 0.24 0.18</ambient>
+            <diffuse>0.02 0.34 0.50 0.18</diffuse>
+            <specular>0.20 0.35 0.42 0.25</specular>
+          </material>
+          <transparency>0.82</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <model name="underwater_depth_haze">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="upper_haze">
+          <pose>0 0 -0.20 0 0 0</pose>
+          <geometry><box><size>9.85 9.85 0.22</size></box></geometry>
+          <material><ambient>0.00 0.12 0.16 0.10</ambient><diffuse>0.01 0.23 0.28 0.10</diffuse></material>
+          <transparency>0.92</transparency>
+        </visual>
+        <visual name="mid_haze">
+          <pose>0 0 -0.48 0 0 0</pose>
+          <geometry><box><size>9.85 9.85 0.28</size></box></geometry>
+          <material><ambient>0.00 0.10 0.13 0.16</ambient><diffuse>0.01 0.19 0.24 0.16</diffuse></material>
+          <transparency>0.88</transparency>
+        </visual>
+        <visual name="bottom_haze">
+          <pose>0 0 -0.73 0 0 0</pose>
+          <geometry><box><size>9.85 9.85 0.20</size></box></geometry>
+          <material><ambient>0.00 0.08 0.10 0.20</ambient><diffuse>0.01 0.15 0.19 0.20</diffuse></material>
+          <transparency>0.84</transparency>
+        </visual>
+      </link>
+    </model>
+
+    <model name="suspended_particles">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="particle_01"><pose>-4.2 -2.8 -0.25 0 0 0</pose><geometry><sphere><radius>0.006</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.18</ambient><diffuse>0.80 0.95 0.90 0.18</diffuse></material><transparency>0.82</transparency></visual>
+        <visual name="particle_02"><pose>-3.6 1.9 -0.44 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+        <visual name="particle_03"><pose>-3.1 3.4 -0.62 0 0 0</pose><geometry><sphere><radius>0.005</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.17</ambient><diffuse>0.80 0.95 0.90 0.17</diffuse></material><transparency>0.83</transparency></visual>
+        <visual name="particle_04"><pose>-2.5 -3.8 -0.55 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+        <visual name="particle_05"><pose>-1.8 -0.8 -0.32 0 0 0</pose><geometry><sphere><radius>0.006</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.18</ambient><diffuse>0.80 0.95 0.90 0.18</diffuse></material><transparency>0.82</transparency></visual>
+        <visual name="particle_06"><pose>-1.2 2.6 -0.70 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+        <visual name="particle_07"><pose>-0.5 -4.1 -0.40 0 0 0</pose><geometry><sphere><radius>0.005</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.17</ambient><diffuse>0.80 0.95 0.90 0.17</diffuse></material><transparency>0.83</transparency></visual>
+        <visual name="particle_08"><pose>0.2 -1.7 -0.58 0 0 0</pose><geometry><sphere><radius>0.006</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.18</ambient><diffuse>0.80 0.95 0.90 0.18</diffuse></material><transparency>0.82</transparency></visual>
+        <visual name="particle_09"><pose>0.9 3.7 -0.28 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+        <visual name="particle_10"><pose>1.5 0.9 -0.68 0 0 0</pose><geometry><sphere><radius>0.005</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.17</ambient><diffuse>0.80 0.95 0.90 0.17</diffuse></material><transparency>0.83</transparency></visual>
+        <visual name="particle_11"><pose>2.1 -2.9 -0.22 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+        <visual name="particle_12"><pose>2.8 2.1 -0.50 0 0 0</pose><geometry><sphere><radius>0.006</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.18</ambient><diffuse>0.80 0.95 0.90 0.18</diffuse></material><transparency>0.82</transparency></visual>
+        <visual name="particle_13"><pose>3.4 -0.2 -0.72 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+        <visual name="particle_14"><pose>4.0 3.2 -0.36 0 0 0</pose><geometry><sphere><radius>0.005</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.17</ambient><diffuse>0.80 0.95 0.90 0.17</diffuse></material><transparency>0.83</transparency></visual>
+        <visual name="particle_15"><pose>4.3 -3.5 -0.60 0 0 0</pose><geometry><sphere><radius>0.006</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.18</ambient><diffuse>0.80 0.95 0.90 0.18</diffuse></material><transparency>0.82</transparency></visual>
+        <visual name="particle_16"><pose>-0.1 0.2 -0.24 0 0 0</pose><geometry><sphere><radius>0.004</radius></sphere></geometry><material><ambient>0.80 0.95 0.90 0.16</ambient><diffuse>0.80 0.95 0.90 0.16</diffuse></material><transparency>0.84</transparency></visual>
+      </link>
+    </model>
+
+    <model name="bubble_columns">
+      <static>true</static>
+      <pose>0 0 0 0 0 0</pose>
+      <link name="link">
+        <visual name="bubble_1"><pose>-4.4 -4.0 -0.70 0 0 0</pose><geometry><sphere><radius>0.018</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.34</ambient><diffuse>0.80 0.96 1.0 0.34</diffuse></material><transparency>0.66</transparency></visual>
+        <visual name="bubble_2"><pose>-4.3 -3.9 -0.52 0 0 0</pose><geometry><sphere><radius>0.012</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.30</ambient><diffuse>0.80 0.96 1.0 0.30</diffuse></material><transparency>0.70</transparency></visual>
+        <visual name="bubble_3"><pose>-4.5 -4.1 -0.32 0 0 0</pose><geometry><sphere><radius>0.015</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.32</ambient><diffuse>0.80 0.96 1.0 0.32</diffuse></material><transparency>0.68</transparency></visual>
+        <visual name="bubble_4"><pose>-4.35 -4.05 -0.13 0 0 0</pose><geometry><sphere><radius>0.010</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.28</ambient><diffuse>0.80 0.96 1.0 0.28</diffuse></material><transparency>0.72</transparency></visual>
+        <visual name="bubble_5"><pose>4.2 -3.7 -0.68 0 0 0</pose><geometry><sphere><radius>0.014</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.30</ambient><diffuse>0.80 0.96 1.0 0.30</diffuse></material><transparency>0.70</transparency></visual>
+        <visual name="bubble_6"><pose>4.3 -3.8 -0.44 0 0 0</pose><geometry><sphere><radius>0.018</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.34</ambient><diffuse>0.80 0.96 1.0 0.34</diffuse></material><transparency>0.66</transparency></visual>
+        <visual name="bubble_7"><pose>4.1 -3.6 -0.22 0 0 0</pose><geometry><sphere><radius>0.011</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.28</ambient><diffuse>0.80 0.96 1.0 0.28</diffuse></material><transparency>0.72</transparency></visual>
+        <visual name="bubble_8"><pose>-3.9 4.0 -0.62 0 0 0</pose><geometry><sphere><radius>0.016</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.32</ambient><diffuse>0.80 0.96 1.0 0.32</diffuse></material><transparency>0.68</transparency></visual>
+        <visual name="bubble_9"><pose>-4.1 3.8 -0.36 0 0 0</pose><geometry><sphere><radius>0.012</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.30</ambient><diffuse>0.80 0.96 1.0 0.30</diffuse></material><transparency>0.70</transparency></visual>
+        <visual name="bubble_10"><pose>-4.0 3.9 -0.12 0 0 0</pose><geometry><sphere><radius>0.010</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.28</ambient><diffuse>0.80 0.96 1.0 0.28</diffuse></material><transparency>0.72</transparency></visual>
+        <visual name="bubble_11"><pose>3.8 4.2 -0.58 0 0 0</pose><geometry><sphere><radius>0.017</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.33</ambient><diffuse>0.80 0.96 1.0 0.33</diffuse></material><transparency>0.67</transparency></visual>
+        <visual name="bubble_12"><pose>4.0 4.0 -0.30 0 0 0</pose><geometry><sphere><radius>0.012</radius></sphere></geometry><material><ambient>0.80 0.96 1.0 0.30</ambient><diffuse>0.80 0.96 1.0 0.30</diffuse></material><transparency>0.70</transparency></visual>
+      </link>
+    </model>
+
+    <model name="floor_caustics">
+      <static>true</static>
+      <pose>0 0 -0.845 0 0 0.35</pose>
+      <link name="link">
+        <visual name="caustic_1"><pose>-3.8 -3.2 0 0 0 0.20</pose><geometry><box><size>2.2 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_2"><pose>-1.5 -2.2 0 0 0 -0.28</pose><geometry><box><size>2.8 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_3"><pose>1.9 -3.0 0 0 0 0.36</pose><geometry><box><size>2.5 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_4"><pose>3.6 -1.2 0 0 0 -0.15</pose><geometry><box><size>2.1 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_5"><pose>-3.4 0.2 0 0 0 -0.22</pose><geometry><box><size>2.7 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_6"><pose>-0.2 0.8 0 0 0 0.31</pose><geometry><box><size>3.0 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_7"><pose>3.2 1.2 0 0 0 -0.33</pose><geometry><box><size>2.4 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_8"><pose>-2.1 3.1 0 0 0 0.18</pose><geometry><box><size>2.6 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+        <visual name="caustic_9"><pose>1.5 3.3 0 0 0 -0.26</pose><geometry><box><size>2.9 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
+      </link>
+    </model>
+
+    <model name="pool_wall_north">
+      <static>true</static>
+      <pose>0 5.05 -0.43 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>10.2 0.10 0.90</size></box></geometry></collision><visual name="visual"><geometry><box><size>10.2 0.10 0.90</size></box></geometry><material><ambient>0.16 0.22 0.26 1</ambient><diffuse>0.20 0.28 0.32 1</diffuse></material></visual></link>
+    </model>
+    <model name="pool_wall_south">
+      <static>true</static>
+      <pose>0 -5.05 -0.43 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>10.2 0.10 0.90</size></box></geometry></collision><visual name="visual"><geometry><box><size>10.2 0.10 0.90</size></box></geometry><material><ambient>0.16 0.22 0.26 1</ambient><diffuse>0.20 0.28 0.32 1</diffuse></material></visual></link>
+    </model>
+    <model name="pool_wall_east">
+      <static>true</static>
+      <pose>5.05 0 -0.43 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>0.10 10.2 0.90</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.10 10.2 0.90</size></box></geometry><material><ambient>0.16 0.22 0.26 1</ambient><diffuse>0.20 0.28 0.32 1</diffuse></material></visual></link>
+    </model>
+    <model name="pool_wall_west">
+      <static>true</static>
+      <pose>-5.05 0 -0.43 0 0 0</pose>
+      <link name="link"><collision name="collision"><geometry><box><size>0.10 10.2 0.90</size></box></geometry></collision><visual name="visual"><geometry><box><size>0.10 10.2 0.90</size></box></geometry><material><ambient>0.16 0.22 0.26 1</ambient><diffuse>0.20 0.28 0.32 1</diffuse></material></visual></link>
+    </model>
+
+    <model name="hook_A">
+      <static>true</static>
+      <pose>-4.88 0 -0.44 0 0 0</pose>
+      <link name="link">
+        <visual name="panel"><pose>-0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry><material><ambient>0.9 0.12 0.10 1</ambient><diffuse>0.9 0.12 0.10 1</diffuse></material></visual>
+        <visual name="peg"><pose>0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <collision name="panel_collision"><pose>-0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry></collision>
+      </link>
+    </model>
+    <model name="hook_B">
+      <static>true</static>
+      <pose>4.88 0 -0.44 0 0 0</pose>
+      <link name="link">
+        <visual name="panel"><pose>0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry><material><ambient>0.10 0.60 0.25 1</ambient><diffuse>0.10 0.60 0.25 1</diffuse></material></visual>
+        <visual name="peg"><pose>-0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <collision name="panel_collision"><pose>0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>-0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry></collision>
+      </link>
+    </model>
+    <model name="hook_C">
+      <static>true</static>
+      <pose>0 4.88 -0.44 0 0 0</pose>
+      <link name="link">
+        <visual name="panel"><pose>0 0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry><material><ambient>0.15 0.25 0.95 1</ambient><diffuse>0.15 0.25 0.95 1</diffuse></material></visual>
+        <visual name="peg"><pose>0 -0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <collision name="panel_collision"><pose>0 0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>0 -0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry></collision>
+      </link>
+    </model>
+    <model name="hook_D">
+      <static>true</static>
+      <pose>0 -4.88 -0.44 0 0 0</pose>
+      <link name="link">
+        <visual name="panel"><pose>0 -0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry><material><ambient>0.95 0.70 0.10 1</ambient><diffuse>0.95 0.70 0.10 1</diffuse></material></visual>
+        <visual name="peg"><pose>0 0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <collision name="panel_collision"><pose>0 -0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>0 0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry></collision>
+      </link>
+    </model>
+
+    <include>
+      <name>gamantaray_rov</name>
+      <uri>model://@ROV_MODEL_URI@</uri>
+      <pose>-3.2 0 -0.28 0 0 0</pose>
+    </include>
+
+    <include>
+      <name>gamantaray_rov_left_gripper_jaw</name>
+      <uri>model://@LEFT_GRIPPER_JAW_URI@</uri>
+      <pose>-2.942 0.066 -0.425 0 0 0.46</pose>
+    </include>
+    <include>
+      <name>gamantaray_rov_right_gripper_jaw</name>
+      <uri>model://@RIGHT_GRIPPER_JAW_URI@</uri>
+      <pose>-2.942 -0.066 -0.425 0 0 -0.46</pose>
+    </include>
+    <include>
+      <name>rov_surface_wake</name>
+      <uri>model://rov_surface_wake</uri>
+      <pose>0 0 6 0 0 0</pose>
+    </include>
+    @KINEMATIC_PROP_VISUALS@
+
+    <include>
+      <name>kki_payload_@PAYLOAD_CODE@</name>
+      <uri>model://kki_payload_@PAYLOAD_CODE@</uri>
+      <pose>0 0 -0.79 0 0 0</pose>
+    </include>
+  </world>
+</sdf>

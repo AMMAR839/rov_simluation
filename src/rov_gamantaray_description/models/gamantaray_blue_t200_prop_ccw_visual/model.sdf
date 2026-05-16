@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="gamantaray_blue_t200_prop_ccw_visual">
+    <static>true</static>
+    <link name="link">
+      <visual name="propeller">
+        <pose>0 0 0 -1.571 0 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://gamantaray_blue_t200_prop_ccw_visual/meshes/ccw_prop.dae</uri>
+            <scale>0.765 0.765 0.765</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+  </model>
+</sdf>

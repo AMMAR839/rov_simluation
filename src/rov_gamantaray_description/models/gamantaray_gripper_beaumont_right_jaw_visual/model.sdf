@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="gamantaray_gripper_beaumont_right_jaw_visual">
+    <static>true</static>
+    <link name="jaw_link">
+      <visual name="claw_mesh">
+        <pose>0.060 0.006 -0.012 0 0 1.5707963268</pose>
+        <geometry>
+          <mesh>
+            <uri>model://gamantaray_rov_beaumont_gripper/meshes/claw.stl</uri>
+            <scale>0.95 0.95 0.95</scale>
+          </mesh>
+        </geometry>
+        <material>
+          <ambient>0.015 0.015 0.018 1</ambient>
+          <diffuse>0.030 0.032 0.036 1</diffuse>
+          <specular>0.18 0.18 0.20 1</specular>
+        </material>
+      </visual>
+      <visual name="rubber_pad">
+        <pose>0.090 0.018 0 0 0 0</pose>
+        <geometry><box><size>0.070 0.010 0.024</size></box></geometry>
+        <material><ambient>0.003 0.003 0.003 1</ambient><diffuse>0.007 0.007 0.007 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+</sdf>
