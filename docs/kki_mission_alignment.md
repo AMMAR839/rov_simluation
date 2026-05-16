@@ -6,8 +6,10 @@ Sumber pembanding: `/home/ammar/Downloads/Sosialisasi KKI 2026 ROV.pdf`.
 
 - Kolam lomba 10 m x 10 m dengan kedalaman representatif 0.85 m dari rentang PDF 0.7-0.9 m.
 - ROV default `rov_variant:=github_blue` memakai visual BlueROV2-style dari GitHub yang diskalakan agar body + thruster berada dalam batas 35 x 35 x 35 cm. Gripper menempel ke ROV dan boleh berada di luar dimensi sesuai PDF.
-- Payload QR A/B/C/D tersedia di dasar kolam.
-- Hook/gantungan A/B/C/D tersedia di sisi kolam.
+- Payload QR A/B/C/D tersedia di dasar kolam dengan geometri mengikuti gambar PDF: plate 5 cm x 10 cm, QR 4 cm x 4 cm menghadap samping, base 3 cm, dan lubang gantung diameter 3 cm di atas QR.
+- Hook/gantungan A/B/C/D tersedia di sisi kolam sebagai pasak silinder diameter 2 cm, sehingga dapat masuk ke lubang payload 3 cm.
+- Pelepasan payload di dekat hook memakai constraint gantung kinematic: lubang payload dikunci ke pasak hook, lalu payload berayun teredam seperti bandul pendek.
+- Misi autonomous nomor 5 tersedia lewat `mission_profile:=release_surface` untuk release payload dan naik ke permukaan, atau `mission_profile:=carry_release_surface` jika ROV masih perlu menuju hook dulu.
 - Alur misi tersedia: scan QR, ambil payload, pindah ke sisi sesuai QR, lepas payload, lalu naik ke permukaan.
 - Kontrol manual tersedia lewat joystick dan keyboard.
 - Mode autonomous baseline tersedia lewat `mission_autonomy:=true`.

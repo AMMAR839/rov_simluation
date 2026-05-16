@@ -49,6 +49,7 @@ class JoystickDriver(Node):
         self.declare_parameter("button_yaw_right", -1)
         self.declare_parameter("button_close_gripper", 0)
         self.declare_parameter("button_open_gripper", 1)
+        self.declare_parameter("cmd_vel_topic", "/rov/manual_cmd_vel")
 
         self.device_path = str(self.get_parameter("device_path").value)
         self.deadzone = float(self.get_parameter("deadzone").value)
@@ -74,13 +75,14 @@ class JoystickDriver(Node):
         self.button_yaw_right = int(self.get_parameter("button_yaw_right").value)
         self.button_close = int(self.get_parameter("button_close_gripper").value)
         self.button_open = int(self.get_parameter("button_open_gripper").value)
+        self.cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
 
         self.axes: dict[int, float] = {}
         self.buttons: dict[int, int] = {}
         self.fd: Optional[int] = None
         self.warned_missing = False
 
-        self.cmd_pub = self.create_publisher(Twist, "/rov/cmd_vel", 10)
+        self.cmd_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
         self.gripper_pub = self.create_publisher(Float64, "/rov/gripper_cmd", 10)
         self.create_timer(0.05, self.update)
 

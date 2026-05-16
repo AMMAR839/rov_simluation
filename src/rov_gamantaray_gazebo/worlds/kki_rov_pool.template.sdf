@@ -325,9 +325,9 @@
       <pose>-4.88 0 -0.44 0 0 0</pose>
       <link name="link">
         <visual name="panel"><pose>-0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry><material><ambient>0.9 0.12 0.10 1</ambient><diffuse>0.9 0.12 0.10 1</diffuse></material></visual>
-        <visual name="peg"><pose>0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <visual name="peg"><pose>0.16 0 -0.02 0 1.5708 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
         <collision name="panel_collision"><pose>-0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry></collision>
-        <collision name="peg_collision"><pose>0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>0.16 0 -0.02 0 1.5708 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry></collision>
       </link>
     </model>
     <model name="hook_B">
@@ -335,9 +335,9 @@
       <pose>4.88 0 -0.44 0 0 0</pose>
       <link name="link">
         <visual name="panel"><pose>0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry><material><ambient>0.10 0.60 0.25 1</ambient><diffuse>0.10 0.60 0.25 1</diffuse></material></visual>
-        <visual name="peg"><pose>-0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <visual name="peg"><pose>-0.16 0 -0.02 0 1.5708 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
         <collision name="panel_collision"><pose>0.02 0 0 0 0 0</pose><geometry><box><size>0.05 0.45 0.22</size></box></geometry></collision>
-        <collision name="peg_collision"><pose>-0.16 0 -0.02 0 0 0</pose><geometry><box><size>0.32 0.04 0.04</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>-0.16 0 -0.02 0 1.5708 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry></collision>
       </link>
     </model>
     <model name="hook_C">
@@ -345,9 +345,9 @@
       <pose>0 4.88 -0.44 0 0 0</pose>
       <link name="link">
         <visual name="panel"><pose>0 0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry><material><ambient>0.15 0.25 0.95 1</ambient><diffuse>0.15 0.25 0.95 1</diffuse></material></visual>
-        <visual name="peg"><pose>0 -0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <visual name="peg"><pose>0 -0.16 -0.02 1.5708 0 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
         <collision name="panel_collision"><pose>0 0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry></collision>
-        <collision name="peg_collision"><pose>0 -0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>0 -0.16 -0.02 1.5708 0 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry></collision>
       </link>
     </model>
     <model name="hook_D">
@@ -355,9 +355,9 @@
       <pose>0 -4.88 -0.44 0 0 0</pose>
       <link name="link">
         <visual name="panel"><pose>0 -0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry><material><ambient>0.95 0.70 0.10 1</ambient><diffuse>0.95 0.70 0.10 1</diffuse></material></visual>
-        <visual name="peg"><pose>0 0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
+        <visual name="peg"><pose>0 0.16 -0.02 1.5708 0 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry><material><ambient>0.95 0.95 0.92 1</ambient><diffuse>0.95 0.95 0.92 1</diffuse></material></visual>
         <collision name="panel_collision"><pose>0 -0.02 0 0 0 0</pose><geometry><box><size>0.45 0.05 0.22</size></box></geometry></collision>
-        <collision name="peg_collision"><pose>0 0.16 -0.02 0 0 0</pose><geometry><box><size>0.04 0.32 0.04</size></box></geometry></collision>
+        <collision name="peg_collision"><pose>0 0.16 -0.02 1.5708 0 0</pose><geometry><cylinder><radius>0.010</radius><length>0.32</length></cylinder></geometry></collision>
       </link>
     </model>
 

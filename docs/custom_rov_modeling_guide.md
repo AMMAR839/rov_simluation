@@ -276,7 +276,7 @@ Sebelum dipakai:
 2. Pastikan mesh bisa ditemukan lewat `model://`.
 3. Pastikan ROV tidak lebih besar dari batas dimensi yang dipakai di lomba.
 4. Pastikan propeller berada di tengah duct/ring.
-5. Pastikan kamera bawah melihat QR saat ROV di atas payload.
+5. Pastikan kamera depan/wall melihat QR samping payload saat ROV mendekat.
 6. Pastikan gripper sejajar dengan payload.
 7. `colcon build --symlink-install`
 8. Jalankan launch dengan `rov_variant` baru.

@@ -3,47 +3,141 @@
   <model name="kki_payload_B">
     <static>false</static>
     <self_collide>false</self_collide>
-    <allow_auto_disable>false</allow_auto_disable>
+    <allow_auto_disable>true</allow_auto_disable>
     <link name="payload_link">
       <inertial>
-        <mass>0.30</mass>
+        <mass>0.20</mass>
         <inertia>
-          <ixx>0.00028</ixx>
+          <ixx>0.00022</ixx>
           <ixy>0</ixy>
           <ixz>0</ixz>
-          <iyy>0.00028</iyy>
+          <iyy>0.00018</iyy>
           <iyz>0</iyz>
-          <izz>0.00008</izz>
+          <izz>0.00006</izz>
         </inertia>
       </inertial>
-      <collision name="body_collision">
-        <geometry><box><size>0.06 0.06 0.10</size></box></geometry>
+      <velocity_decay>
+        <linear>1.8</linear>
+        <angular>2.4</angular>
+      </velocity_decay>
+
+      <!-- Official KKI payload approximation:
+           front plate 5 cm x 10 cm x 0.6 cm, QR 4 cm x 4 cm on the side,
+           and an upper 3 cm hanging hole. The collision is split so the
+           hook peg can enter the opening instead of hitting a solid box. -->
+      <collision name="plate_lower_collision">
+        <pose>0 0 -0.0225 0 0 0</pose>
+        <geometry><box><size>0.006 0.050 0.055</size></box></geometry>
         <surface>
-          <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
-          <contact><ode><kp>80000</kp><kd>8</kd></ode></contact>
+          <friction><ode><mu>1.7</mu><mu2>1.7</mu2><slip1>0.02</slip1><slip2>0.02</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>30000</kp><kd>80</kd></ode></contact>
         </surface>
       </collision>
-      <collision name="qr_top_plate_collision">
-        <pose>0 0 0.052 0 0 0</pose>
-        <geometry><box><size>0.08 0.08 0.004</size></box></geometry>
+      <collision name="plate_top_collision">
+        <pose>0 0 0.044 0 0 0</pose>
+        <geometry><box><size>0.006 0.050 0.012</size></box></geometry>
         <surface>
-          <friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction>
-          <contact><ode><kp>60000</kp><kd>6</kd></ode></contact>
+          <friction><ode><mu>1.7</mu><mu2>1.7</mu2><slip1>0.02</slip1><slip2>0.02</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>30000</kp><kd>80</kd></ode></contact>
         </surface>
       </collision>
-      <visual name="body_visual">
-        <geometry><box><size>0.06 0.06 0.10</size></box></geometry>
+      <collision name="plate_left_hole_side_collision">
+        <pose>0 -0.020 0.0235 0 0 0</pose>
+        <geometry><box><size>0.006 0.010 0.029</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.7</mu><mu2>1.7</mu2><slip1>0.02</slip1><slip2>0.02</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>30000</kp><kd>80</kd></ode></contact>
+        </surface>
+      </collision>
+      <collision name="plate_right_hole_side_collision">
+        <pose>0 0.020 0.0235 0 0 0</pose>
+        <geometry><box><size>0.006 0.010 0.029</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.7</mu><mu2>1.7</mu2><slip1>0.02</slip1><slip2>0.02</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>30000</kp><kd>80</kd></ode></contact>
+        </surface>
+      </collision>
+      <collision name="base_foot_collision">
+        <pose>0.012 0 -0.053 0 0 0</pose>
+        <geometry><box><size>0.030 0.050 0.006</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.9</mu><mu2>1.9</mu2><slip1>0.015</slip1><slip2>0.015</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>35000</kp><kd>90</kd></ode></contact>
+        </surface>
+      </collision>
+
+      <visual name="plate_lower_visual">
+        <pose>0 0 -0.0225 0 0 0</pose>
+        <geometry><box><size>0.006 0.050 0.055</size></box></geometry>
         <material>
           <ambient>0.10 0.60 0.25 1</ambient>
           <diffuse>0.10 0.60 0.25 1</diffuse>
         </material>
       </visual>
-      <visual name="qr_top">
-        <pose>0 0 0.052 0 0 0</pose>
+      <visual name="plate_top_visual">
+        <pose>0 0 0.044 0 0 0</pose>
+        <geometry><box><size>0.006 0.050 0.012</size></box></geometry>
+        <material>
+          <ambient>0.10 0.60 0.25 1</ambient>
+          <diffuse>0.10 0.60 0.25 1</diffuse>
+        </material>
+      </visual>
+      <visual name="plate_left_hole_side_visual">
+        <pose>0 -0.020 0.0235 0 0 0</pose>
+        <geometry><box><size>0.006 0.010 0.029</size></box></geometry>
+        <material>
+          <ambient>0.10 0.60 0.25 1</ambient>
+          <diffuse>0.10 0.60 0.25 1</diffuse>
+        </material>
+      </visual>
+      <visual name="plate_right_hole_side_visual">
+        <pose>0 0.020 0.0235 0 0 0</pose>
+        <geometry><box><size>0.006 0.010 0.029</size></box></geometry>
+        <material>
+          <ambient>0.10 0.60 0.25 1</ambient>
+          <diffuse>0.10 0.60 0.25 1</diffuse>
+        </material>
+      </visual>
+      <visual name="base_foot_visual">
+        <pose>0.012 0 -0.053 0 0 0</pose>
+        <geometry><box><size>0.030 0.050 0.006</size></box></geometry>
+        <material>
+          <ambient>0.10 0.60 0.25 1</ambient>
+          <diffuse>0.10 0.60 0.25 1</diffuse>
+        </material>
+      </visual>
+      <visual name="hanging_hole_shadow">
+        <pose>-0.0037 0 0.0235 0 1.5708 0</pose>
+        <geometry><cylinder><radius>0.015</radius><length>0.001</length></cylinder></geometry>
+        <material>
+          <ambient>0.01 0.015 0.018 1</ambient>
+          <diffuse>0.01 0.015 0.018 1</diffuse>
+        </material>
+      </visual>
+      <visual name="qr_white_backing">
+        <pose>-0.0038 0 -0.023 0 -1.5708 0</pose>
         <geometry>
           <plane>
             <normal>0 0 1</normal>
-            <size>0.08 0.08</size>
+            <size>0.043 0.043</size>
+          </plane>
+        </geometry>
+        <material>
+          <ambient>1 1 1 1</ambient>
+          <diffuse>1 1 1 1</diffuse>
+        </material>
+      </visual>
+      <visual name="qr_side">
+        <pose>-0.0041 0 -0.023 0 -1.5708 0</pose>
+        <geometry>
+          <plane>
+            <normal>0 0 1</normal>
+            <size>0.040 0.040</size>
           </plane>
         </geometry>
         <material>

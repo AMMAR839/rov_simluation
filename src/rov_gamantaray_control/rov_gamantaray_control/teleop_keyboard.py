@@ -29,15 +29,17 @@ class KeyboardTeleop(Node):
         self.declare_parameter("vertical_speed", 0.45)
         self.declare_parameter("yaw_speed", 0.50)
         self.declare_parameter("key_hold_timeout_s", 0.35)
+        self.declare_parameter("cmd_vel_topic", "/rov/manual_cmd_vel")
 
         self.linear_speed = float(self.get_parameter("linear_speed").value)
         self.vertical_speed = float(self.get_parameter("vertical_speed").value)
         self.yaw_speed = float(self.get_parameter("yaw_speed").value)
         self.key_hold_timeout_s = float(self.get_parameter("key_hold_timeout_s").value)
+        self.cmd_vel_topic = str(self.get_parameter("cmd_vel_topic").value)
         self.cmd = Twist()
         self.last_motion_key_time = 0.0
 
-        self.cmd_pub = self.create_publisher(Twist, "/rov/cmd_vel", 10)
+        self.cmd_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
         self.gripper_pub = self.create_publisher(Float64, "/rov/gripper_cmd", 10)
         self.create_timer(0.05, self.publish_current_command)
 

@@ -183,22 +183,28 @@ Vision tidak aktif default agar simulasi lebih ringan. Aktifkan dengan:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true
 ```
 
+Default QR dibaca dari kamera depan/wall karena QR payload menghadap samping. Kalau perlu mengganti sumber kamera, pakai:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true qr_image_topic:=/rov/camera/wall/image
+```
+
 Lihat hasil QR:
 
 ```bash
 ros2 topic echo /rov/qr_code
 ```
 
+Lihat kamera depan/wall untuk QR:
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
+```
+
 Lihat kamera bawah:
 
 ```bash
 ros2 run rqt_image_view rqt_image_view /rov/camera/bottom/image
-```
-
-Lihat kamera depan:
-
-```bash
-ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
 ```
 
 Lihat debug QR:
@@ -217,7 +223,7 @@ Cara menggunakan QR:
 
 1. Jalankan launch dengan `use_vision:=true`.
 2. Turunkan ROV mendekati payload.
-3. Arahkan kamera bawah ke QR di atas payload.
+3. Arahkan kamera depan/wall ke QR di sisi payload.
 4. Cek `/rov/qr_code`.
 5. Jika QR terbaca, huruf `A/B/C/D` akan dipublish.
 
@@ -308,7 +314,7 @@ space -> stop
 Catatan penting:
 
 - Jangan menjalankan joystick dan keyboard bersamaan jika tidak perlu.
-- Kalau dua node sama-sama publish `/rov/cmd_vel`, gerak ROV bisa saling ganggu.
+- Joystick dan keyboard sama-sama masuk jalur `/rov/manual_cmd_vel`; kalau keduanya aktif, input manualnya bisa saling menimpa.
 
 ## 10. Cara Mengambil Payload Dengan Gripper
 
@@ -340,6 +346,8 @@ aligned=true
 7. Bawa payload ke hook tujuan.
 8. Tekan tombol `B` untuk membuka gripper dan melepas payload.
 
+Jika payload dilepas cukup dekat dengan hook yang sesuai QR, status akan berubah menjadi `hung`. Pada kondisi ini lubang payload dikunci ke pasak hook dan payload akan berayun kecil lalu mereda, seperti benda yang baru digantung.
+
 Makna status:
 
 ```text
@@ -352,21 +360,83 @@ err=(x,y,z)            -> error posisi payload terhadap titik capture
 
 Payload juga bisa bergeser saat ditabrak ROV/capit. Jika ingin melihat efek ini, turunkan ROV ke dekat dasar lalu dorong payload perlahan.
 
+Tuning efek gantung:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true hanging_damping:=2.8 hanging_release_velocity_gain:=0.35 hanging_max_angle_rad:=0.35
+```
+
+- `hanging_damping`: makin besar, ayunan makin cepat berhenti.
+- `hanging_release_velocity_gain`: makin besar, gerakan ROV saat release lebih kuat membuat payload berayun.
+- `hanging_max_angle_rad`: batas maksimum sudut ayunan.
+
 ## 11. Mission Autonomous Sederhana
 
 Aktifkan mission supervisor:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true use_vision:=true
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=full use_vision:=true
 ```
 
-Dengan stik tetap aktif:
+Profil autonomous yang tersedia:
+
+```text
+full                   -> scan QR, ambil, bawa ke hook, release, surface
+carry_release_surface  -> sudah membawa payload, lalu ke hook, release, surface
+release_surface        -> sudah dekat hook, release payload, lalu surface
+```
+
+Untuk misi nomor 5 dari PDF, gunakan `release_surface` jika ROV sudah dekat hook:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true use_vision:=true
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=release_surface payload_code:=C joystick:=false
 ```
 
-Namun untuk pengujian autonomous murni, sebaiknya jangan gerakkan stik karena command manual dan autonomous sama-sama masuk ke `/rov/cmd_vel`.
+Untuk skenario manual lalu autonomous dalam satu launch:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=release_surface payload_code:=C command_source:=manual
+```
+
+Pada command di atas, `mission_supervisor` sudah hidup tetapi menunggu sumber command menjadi `auto`. Bawa ROV dan payload ke dekat hook secara manual, lalu aktifkan autonomous:
+
+```bash
+ros2 topic pub --once /rov/command_source std_msgs/msg/String "{data: auto}"
+```
+
+Jika ROV sudah menjepit payload tetapi belum berada di hook, gunakan:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C joystick:=false
+```
+
+Jika ingin setelah payload terjepit langsung pindah autonomous dan bergerak ke gantungan, jalankan dari awal dengan:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C command_source:=manual auto_start_on_attached:=true use_vision:=true
+```
+
+Alurnya:
+
+1. Operator menggerakkan ROV manual.
+2. Operator scan QR dan menjepit payload.
+3. Saat `/rov/gripper_status` berubah menjadi `attached`, mission supervisor otomatis mengirim `/rov/command_source = auto`.
+4. ROV bergerak menuju hook sesuai `payload_code`.
+5. ROV membuka gripper, payload masuk mode `hung`, lalu ROV naik ke permukaan.
+
+Untuk pengujian autonomous murni, pakai `joystick:=false`. Jika joystick tetap aktif, workspace memakai `cmd_vel_mux`: manual masuk ke `/rov/manual_cmd_vel`, autonomous masuk ke `/rov/auto_cmd_vel`, lalu mux meneruskan sumber aktif ke `/rov/cmd_vel`.
+
+Pindah ke autonomous:
+
+```bash
+ros2 topic pub --once /rov/command_source std_msgs/msg/String "{data: auto}"
+```
+
+Kembali ke manual:
+
+```bash
+ros2 topic pub --once /rov/command_source std_msgs/msg/String "{data: manual}"
+```
 
 Pantau state:
 
@@ -380,11 +450,18 @@ Urutan state:
 scan_payload -> pick_payload -> go_to_hook -> release_payload -> surface
 ```
 
+Pada profil `release_surface`, state langsung dimulai dari:
+
+```text
+release_payload -> surface -> complete
+```
+
 Catatan:
 
 - Autonomous ini baseline sederhana.
 - Belum ada obstacle avoidance.
 - Belum ada visual servoing penuh.
+- State `release_payload` membaca `/rov/gripper_status`. Kalau gripper melaporkan `hung`, ROV lanjut ke `surface`.
 - Cocok untuk kerangka awal pengembangan.
 
 ## 12. Mode Hydro Eksperimental
@@ -409,7 +486,7 @@ Gunakan mode ini jika ingin eksperimen fisika. Untuk latihan misi dan real-time 
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=kinematic
 ```
 
-Mode wrench hydro murni masih tersedia:
+Mode wrench hydro masih tersedia:
 
 ```bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=hydro \
@@ -429,6 +506,8 @@ hydro_yaw_torque_gain       -> kuat yaw
 
 Jika analog maju normal di `hydro_control_mode:=kinematic`, tetapi tidak maju di `hydro_control_mode:=wrench`, berarti masalahnya ada di tuning gaya wrench, buoyancy, damping, dan hydrodynamics, bukan di stik.
 
+Catatan implementasi: mode `wrench` sekarang memakai gaya Gazebo dan `pose_assist_enabled=true` di `hydro_wrench_driver`. Pose assist ini membuat ROV tetap bergerak terlihat saat parameter hidrodinamika belum dikalibrasi penuh.
+
 Batasan hydro:
 
 - perlu tuning massa dan buoyancy,
@@ -445,6 +524,12 @@ ros2 topic list
 ```
 
 Cek command dari stik/keyboard:
+
+```bash
+ros2 topic echo /rov/manual_cmd_vel
+```
+
+Cek command final yang masuk allocator:
 
 ```bash
 ros2 topic echo /rov/cmd_vel
@@ -482,40 +567,40 @@ ros2 topic echo /rov/mission_state
 
 ## 14. Perintah Manual Publish untuk Tes
 
-Tes maju:
+Tes maju lewat jalur manual:
 
 ```bash
-ros2 topic pub --rate 10 /rov/cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}}"
+ros2 topic pub --rate 10 /rov/manual_cmd_vel geometry_msgs/msg/Twist "{linear: {x: 0.5}}"
 ```
 
 Tes mundur:
 
 ```bash
-ros2 topic pub --rate 10 /rov/cmd_vel geometry_msgs/msg/Twist "{linear: {x: -0.5}}"
+ros2 topic pub --rate 10 /rov/manual_cmd_vel geometry_msgs/msg/Twist "{linear: {x: -0.5}}"
 ```
 
 Tes geser kanan:
 
 ```bash
-ros2 topic pub --rate 10 /rov/cmd_vel geometry_msgs/msg/Twist "{linear: {y: -0.5}}"
+ros2 topic pub --rate 10 /rov/manual_cmd_vel geometry_msgs/msg/Twist "{linear: {y: -0.5}}"
 ```
 
 Tes naik:
 
 ```bash
-ros2 topic pub --rate 10 /rov/cmd_vel geometry_msgs/msg/Twist "{linear: {z: 0.4}}"
+ros2 topic pub --rate 10 /rov/manual_cmd_vel geometry_msgs/msg/Twist "{linear: {z: 0.4}}"
 ```
 
 Tes yaw:
 
 ```bash
-ros2 topic pub --rate 10 /rov/cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.4}}"
+ros2 topic pub --rate 10 /rov/manual_cmd_vel geometry_msgs/msg/Twist "{angular: {z: 0.4}}"
 ```
 
 Stop manual:
 
 ```bash
-ros2 topic pub --once /rov/cmd_vel geometry_msgs/msg/Twist "{}"
+ros2 topic pub --once /rov/manual_cmd_vel geometry_msgs/msg/Twist "{}"
 ```
 
 Tutup gripper:
@@ -557,10 +642,16 @@ Biasanya device input butuh akses group seperti `input`. Jika perlu, logout/logi
 
 ### ROV tidak bergerak
 
-Cek apakah `/rov/cmd_vel` berubah:
+Cek apakah `/rov/manual_cmd_vel` berubah:
 
 ```bash
-ros2 topic echo /rov/cmd_vel
+ros2 topic echo /rov/manual_cmd_vel
+```
+
+Cek sumber command aktif:
+
+```bash
+ros2 topic echo /rov/active_command_source
 ```
 
 Cek apakah allocator menghasilkan thruster:
@@ -575,7 +666,7 @@ Cek apakah odometry berubah:
 ros2 topic echo /model/gamantaray_rov/odometry
 ```
 
-Jika `/rov/cmd_vel` nol terus:
+Jika `/rov/manual_cmd_vel` nol terus:
 
 - stik belum terbaca,
 - axis salah,
@@ -639,10 +730,10 @@ Jalankan dengan vision:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true
 ```
 
-Cek kamera:
+Cek kamera QR:
 
 ```bash
-ros2 run rqt_image_view rqt_image_view /rov/camera/bottom/image
+ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
 ```
 
 Cek hasil:
@@ -653,7 +744,7 @@ ros2 topic echo /rov/qr_code
 
 Penyebab umum:
 
-- kamera bawah belum menghadap QR,
+- kamera depan/wall belum menghadap QR samping payload,
 - ROV terlalu jauh,
 - sudut terlalu miring,
 - `use_vision` belum true.
@@ -717,10 +808,16 @@ source /home/ammar/Documents/WS_ROV/install/setup.bash
 ros2 run rqt_image_view rqt_image_view /rov/camera/bottom/image
 ```
 
+Untuk QR payload KKI, pakai kamera depan/wall:
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
+```
+
 Dengan urutan ini, operator bisa:
 
 1. menggerakkan ROV dengan stik,
-2. melihat QR dari kamera bawah,
+2. melihat QR dari kamera depan/wall,
 3. mengecek alignment gripper,
 4. mengambil payload,
 5. memindahkan payload ke hook,

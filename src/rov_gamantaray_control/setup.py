@@ -19,6 +19,7 @@ setup(
     entry_points={
         "console_scripts": [
             "thruster_allocator = rov_gamantaray_control.thruster_allocator:main",
+            "cmd_vel_mux = rov_gamantaray_control.cmd_vel_mux:main",
             "kinematic_driver = rov_gamantaray_control.kinematic_driver:main",
             "hydro_wrench_driver = rov_gamantaray_control.hydro_wrench_driver:main",
             "gripper_manager = rov_gamantaray_control.gripper_manager:main",

@@ -9,7 +9,7 @@ from std_msgs.msg import String
 class QrDetector(Node):
     def __init__(self) -> None:
         super().__init__("qr_detector")
-        self.declare_parameter("image_topic", "/rov/camera/bottom/image")
+        self.declare_parameter("image_topic", "/rov/camera/wall/image")
         self.declare_parameter("debug_image_topic", "/rov/qr_debug/image")
 
         image_topic = str(self.get_parameter("image_topic").value)

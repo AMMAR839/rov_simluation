@@ -33,10 +33,10 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true joystick
 Perilaku stik:
 
 - ROV maju/mundur/geser/naik/yaw hanya selama stick analog digeser.
-- Saat stick dilepas ke tengah, `/rov/cmd_vel` kembali nol dan ROV berhenti.
+- Saat stick dilepas ke tengah, `/rov/manual_cmd_vel` kembali nol dan ROV berhenti saat command source aktif adalah `manual`.
 - Tombol `A` menutup gripper.
 - Tombol `B` membuka gripper.
-- Kalau `rov_teleop_keyboard` masih hidup di terminal lain, tutup dulu karena dua node yang sama-sama publish `/rov/cmd_vel` bisa saling mengganggu.
+- `cmd_vel_mux` memilih command manual atau autonomous sebelum diteruskan ke `/rov/cmd_vel`.
 
 Mapping default:
 
@@ -84,6 +84,12 @@ Aktifkan deteksi QR:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true
 ```
 
+Jika ingin mengganti sumber kamera QR:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true qr_image_topic:=/rov/camera/wall/image
+```
+
 Pilih payload:
 
 ```bash
@@ -108,7 +114,7 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_
 
 Catatan: mulai versi ini, `physics_mode:=hydro` tetap memakai `hydro_control_mode:=kinematic` sebagai default. Artinya world memakai suasana bawah air dan plugin air, tetapi gerak ROV tetap dikendalikan oleh driver kinematic agar analog stik langsung terasa dan tidak macet oleh tuning hidrodinamika.
 
-Mode wrench hydro murni masih ada untuk eksperimen fisika:
+Mode wrench hydro masih ada untuk eksperimen fisika:
 
 ```bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_mode:=hydro \
@@ -117,6 +123,7 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true physics_
 ```
 
 Kalau memakai `hydro_control_mode:=wrench` dan analog terasa tidak maju, itu masalah tuning gaya/damping hidrodinamika, bukan stik.
+Driver wrench sekarang juga memakai `pose_assist_enabled` agar ROV tetap bergerak terlihat sambil gaya/damping hydro belum dikalibrasi penuh.
 
 ## Kontrol Keyboard Opsional
 
@@ -150,7 +157,7 @@ Keyboard teleop sekarang dibuat momentary berbasis timeout: ROV bergerak saat to
 - `src/rov_gamantaray_description`: model ROV, mesh, sensor, thruster visual, dan model hydro opsional.
 - `src/rov_gamantaray_gazebo`: template world kolam, payload QR, hook A/B/C/D, dan visual air.
 - `src/rov_gamantaray_control`: joystick driver, keyboard teleop, allocator thruster, kinematic driver, hydro wrench driver, gripper manager, dan mission supervisor.
-- `src/rov_gamantaray_vision`: deteksi QR dari kamera bawah.
+- `src/rov_gamantaray_vision`: deteksi QR dari kamera depan/dinding.
 - `src/rov_gamantaray_bringup`: launch utama.
 - `docs/reused_references.md`: ringkasan bagian yang dipakai dari PDF dan dua folder referensi.
 - `docs/kki_mission_alignment.md`: checklist kesesuaian workspace terhadap misi PDF.
@@ -166,8 +173,8 @@ Berdasarkan `Sosialisasi KKI 2026 ROV.pdf`, workspace ini sudah mencakup bagian 
 
 - kolam 10 m x 10 m dengan kedalaman 0.7-0.9 m,
 - ROV berukuran representatif di bawah batas 35 x 35 x 35 cm,
-- dua kamera ROV: kamera bawah untuk QR dan kamera depan/dinding,
-- payload dengan QR Code A/B/C/D,
+- dua kamera ROV: kamera depan/dinding untuk QR samping dan kamera bawah untuk observasi dasar kolam,
+- payload sesuai gambar PDF: lebar 5 cm, tinggi 10 cm, QR 4 cm x 4 cm menghadap samping, dan lubang gantung 3 cm di atas QR,
 - gripper untuk mengambil dan melepas payload,
 - hook/gantungan di sisi A/B/C/D,
 - teleoperation memakai stik,
@@ -244,13 +251,13 @@ Algoritma:
    - horizontal `0.75`,
    - vertikal `0.55`,
    - yaw `0.65`.
-6. Publish `geometry_msgs/Twist` ke `/rov/cmd_vel` setiap 0.05 s.
+6. Publish `geometry_msgs/Twist` ke `/rov/manual_cmd_vel` setiap 0.05 s.
 
 Karena command selalu dihitung dari posisi axis terbaru, stick yang kembali tengah menghasilkan command nol. Parameter `joystick_enable_button` bisa dipakai sebagai deadman button tambahan.
 
 ### 4. Allocator thruster
 
-Node `thruster_allocator` mengubah `/rov/cmd_vel` menjadi 6 nilai thruster.
+Node `cmd_vel_mux` memilih `/rov/manual_cmd_vel` atau `/rov/auto_cmd_vel`, lalu meneruskan hasilnya ke `/rov/cmd_vel`. Node `thruster_allocator` mengubah `/rov/cmd_vel` menjadi 6 nilai thruster.
 
 Rumus thruster horizontal:
 
@@ -320,7 +327,7 @@ Rahang gripper dianimasikan oleh `gripper_manager` sebagai dua model visual terp
 - error depan-belakang, kiri-kanan, dan tinggi masih dalam toleransi capture,
 - bukaan rahang sudah cukup kecil untuk menjepit payload.
 
-Payload A/B/C/D punya collision body dan collision plate di bagian QR atas, serta dibuat `static=false` supaya bisa bergeser di lantai kolam. Rahang gripper juga punya collision pada pivot hub, finger, hook tip, dan rear bridge. Pada mode default kinematic, `gripper_manager` membaca pose payload dari `/world/kki_rov_pool/pose/info`, lalu memberi respons dorong saat ROV/capit menyentuh payload dan sedang bergerak ke arah payload. Jadi kalau `kki_payload_A` ditabrak dari depan/samping oleh ROV atau capit, payload akan bergeser, bukan hanya diam sebagai visual.
+Payload A/B/C/D punya bentuk sesuai PDF: plate vertikal 5 cm x 10 cm, QR 4 cm x 4 cm di sisi depan, base 3 cm, dan lubang gantung 3 cm di atas QR. Collision plate dipecah menjadi beberapa bagian supaya area lubang benar-benar kosong untuk pasak hook. Payload dibuat `static=false` supaya bisa bergeser di lantai kolam. Rahang gripper juga punya collision pada pivot hub, finger, hook tip, dan rear bridge. Pada mode default kinematic, `gripper_manager` membaca pose payload dari `/world/kki_rov_pool/pose/info`, lalu memberi respons dorong saat ROV/capit menyentuh payload dan sedang bergerak ke arah payload. Jadi kalau `kki_payload_A` ditabrak dari depan/samping oleh ROV atau capit, payload akan bergeser, bukan hanya diam sebagai visual.
 
 Saat payload sedang attached, model `held_payload_collision_proxy` ikut dipindahkan ke posisi payload. Proxy ini punya collision dan visual hijau transparan supaya collision benda yang sedang diangkat terlihat jelas di Gazebo.
 
@@ -344,15 +351,21 @@ Untuk memudahkan pengecekan di Gazebo, collision ROV dan capit juga diberi visua
 
 Pada mode default `physics_mode:=kinematic`, pengambilan payload tetap memakai logika alignment dari `gripper_manager`, bukan gaya kontak murni, supaya simulasi stabil dan tidak bergantung pada solver kontak kecil yang mudah jitter. Collision untuk dorong/geser tetap aktif melalui respons kontak kinematic di node yang sama.
 
-Selama attached, pose payload dipindahkan ke tengah rahang gripper melalui service Gazebo `set_pose`. Saat gripper dibuka, payload dilepas di posisi terakhir. Status alignment dan tabrakan bisa dilihat lewat:
+Selama attached, pose payload dipindahkan ke tengah rahang gripper melalui service Gazebo `set_pose`. Saat gripper dibuka di dekat hook yang sesuai QR, payload masuk mode `hung`: lubang payload dikunci sebagai titik gantung pada pasak hook A/B/C/D, lalu body payload mengikuti model ayunan teredam seperti bandul pendek. Jika dibuka jauh dari hook, payload dilepas di posisi terakhir. Status alignment, tabrakan, dan hook gantung bisa dilihat lewat:
 
 ```bash
 ros2 topic echo /rov/gripper_status
 ```
 
+Parameter gantung yang bisa dituning dari launch:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true hanging_damping:=2.8 hanging_release_velocity_gain:=0.35 hanging_max_angle_rad:=0.35
+```
+
 ### 7. Deteksi QR
 
-Node `qr_detector` memakai OpenCV `QRCodeDetector` pada `/rov/camera/bottom/image`.
+Node `qr_detector` memakai OpenCV `QRCodeDetector` pada `/rov/camera/wall/image`, karena QR pada payload KKI menghadap samping, bukan ke atas.
 
 Jalankan simulasi dengan vision aktif:
 
@@ -360,16 +373,16 @@ Jalankan simulasi dengan vision aktif:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true
 ```
 
-Lihat kamera bawah untuk QR:
-
-```bash
-ros2 run rqt_image_view rqt_image_view /rov/camera/bottom/image
-```
-
-Lihat kamera depan:
+Lihat kamera depan untuk QR:
 
 ```bash
 ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
+```
+
+Lihat kamera bawah:
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rov/camera/bottom/image
 ```
 
 Lihat gambar debug hasil deteksi QR:
@@ -406,6 +419,12 @@ Node `mission_supervisor` adalah finite-state machine sederhana:
 scan_payload -> pick_payload -> go_to_hook -> release_payload -> surface
 ```
 
+Ada tiga profil:
+
+- `mission_profile:=full`: scan QR, ambil payload, bawa ke hook, lepas, lalu naik.
+- `mission_profile:=carry_release_surface`: ROV diasumsikan sudah membawa payload, lalu autonomous menuju hook, melepas payload, dan naik ke permukaan.
+- `mission_profile:=release_surface`: ROV diasumsikan sudah dekat hook, lalu autonomous membuka gripper, memastikan payload masuk mode `hung`, dan naik ke permukaan. Ini profil paling langsung untuk misi nomor 5.
+
 Kontrol geraknya memakai proportional controller:
 
 ```text
@@ -425,9 +444,45 @@ Aktifkan dengan:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true use_vision:=true
 ```
 
+Untuk misi nomor 5 saja:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=release_surface payload_code:=C joystick:=false
+```
+
+Untuk skenario lomba yang lebih mirip aslinya, jalankan manual dulu tetapi siapkan autonomous nomor 5:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=release_surface payload_code:=C command_source:=manual
+```
+
+Setelah ROV membawa payload dekat hook C, pindahkan kontrol ke autonomous:
+
+```bash
+ros2 topic pub --once /rov/command_source std_msgs/msg/String "{data: auto}"
+```
+
+Jika payload masih sedang dibawa ROV dan belum sampai hook:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C joystick:=false
+```
+
+Jika ingin otomatis aktif tepat setelah payload berhasil dijepit:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C command_source:=manual auto_start_on_attached:=true use_vision:=true
+```
+
+Pada mode ini, operator hanya perlu scan dan ambil payload. Begitu `/rov/gripper_status` menjadi `attached`, sistem pindah ke `auto`, membawa ROV ke hook sesuai `payload_code`, melepas payload, lalu naik ke permukaan.
+
 ## Topic Penting
 
-- `/rov/cmd_vel`: input gerak utama.
+- `/rov/manual_cmd_vel`: command dari stik/keyboard.
+- `/rov/auto_cmd_vel`: command dari mission supervisor.
+- `/rov/command_source`: pilih `manual` atau `auto`.
+- `/rov/active_command_source`: sumber command yang sedang aktif.
+- `/rov/cmd_vel`: hasil mux yang masuk ke allocator.
 - `/rov/thruster_status`: output allocator untuk driver kinematic.
 - `/rov/thruster1/cmd` sampai `/rov/thruster6/cmd`: command thruster Gazebo.
 - `/rov/gripper_cmd`: command buka/tutup gripper.
@@ -457,7 +512,7 @@ Untuk mengubah arena:
 
 - edit `src/rov_gamantaray_gazebo/worlds/kki_rov_pool.template.sdf`,
 - hook A/B/C/D ada sebagai model static di world,
-- payload QR ada di `src/rov_gamantaray_gazebo/models/kki_payload_A` sampai `D`.
+- payload QR samping dan lubang gantung ada di `src/rov_gamantaray_gazebo/models/kki_payload_A` sampai `D`.
 
 Untuk mengubah model ROV:
 
@@ -478,7 +533,7 @@ Untuk mengembangkan autonomous:
 Untuk mengembangkan vision:
 
 - mulai dari `qr_detector.py`,
-- tambahkan filtering hasil QR, estimasi posisi QR dari kamera bawah, atau tracking payload,
+- tambahkan filtering hasil QR, estimasi posisi QR dari kamera depan/wall, atau tracking payload,
 - aktifkan kamera/debug dengan `use_vision:=true`.
 
 Untuk eksperimen fisika hydro:
@@ -529,13 +584,19 @@ Jika ROV tetap bergerak setelah stick dilepas:
 
 1. Pastikan tidak ada terminal `rov_teleop_keyboard` yang masih jalan.
 2. Pastikan `mission_autonomy:=false`.
-3. Cek publisher `/rov/cmd_vel`:
+3. Cek command source:
+
+```bash
+ros2 topic echo /rov/active_command_source
+```
+
+4. Cek publisher `/rov/cmd_vel`:
 
 ```bash
 ros2 topic info /rov/cmd_vel
 ```
 
-4. Uji nilai command:
+5. Uji nilai command:
 
 ```bash
 ros2 topic echo /rov/cmd_vel

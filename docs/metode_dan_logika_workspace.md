@@ -10,12 +10,16 @@ Workspace ini memakai ROS 2 Jazzy dan Gazebo Harmonic. Simulasi dibagi menjadi b
 - `rov_gamantaray_description`: model ROV, gripper, propeller, sensor, dan collision ROV.
 - `rov_gamantaray_gazebo`: world kolam, payload QR, hook A/B/C/D, air, wake, dan collision proxy.
 - `rov_gamantaray_control`: input stik/keyboard, allocator thruster, driver gerak, gripper, collision response, efek air, dan misi sederhana.
-- `rov_gamantaray_vision`: deteksi QR Code dari kamera bawah.
+- `rov_gamantaray_vision`: deteksi QR Code dari kamera depan/wall.
 
 Alur data utama:
 
 ```text
 stik / keyboard
+  -> /rov/manual_cmd_vel
+mission_supervisor
+  -> /rov/auto_cmd_vel
+cmd_vel_mux
   -> /rov/cmd_vel
   -> thruster_allocator
   -> /rov/thruster_status
@@ -28,7 +32,7 @@ stik / keyboard
 Alur payload:
 
 ```text
-kamera bawah
+kamera depan/wall
   -> qr_detector
   -> /rov/qr_code
   -> gripper_manager / mission_supervisor
@@ -175,7 +179,7 @@ src/rov_gamantaray_control/rov_gamantaray_control/joystick_driver.py
 Topik output:
 
 ```text
-/rov/cmd_vel
+/rov/manual_cmd_vel
 /rov/gripper_cmd
 ```
 
@@ -419,7 +423,7 @@ hydro_control_mode:=kinematic
 
 Alasannya praktis: world tetap menampilkan suasana bawah air, tetapi gerak ROV tetap responsif untuk latihan misi. Pada mode ini, `kinematic_driver` tetap membaca `/rov/thruster_status` dan menggerakkan pose ROV, sama seperti mode utama.
 
-Mode wrench hydro murni diaktifkan dengan:
+Mode wrench hydro diaktifkan dengan:
 
 ```bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py physics_mode:=hydro hydro_control_mode:=wrench
@@ -468,6 +472,14 @@ hydro_yaw_torque_gain
 ```
 
 Jika analog stik sudah menghasilkan `/rov/thruster_status`, tetapi ROV hampir tidak maju pada `hydro_control_mode:=wrench`, penyebabnya ada di tuning gaya wrench, buoyancy, damping, dan hydrodynamics. Mode ini belum menjadi jalur latihan utama.
+
+Supaya mode `wrench` tetap bisa dilihat bergerak sebelum kalibrasi selesai, `hydro_wrench_driver` juga punya `pose_assist_enabled=true` secara default. Pose assist membaca nilai thruster yang sama, menghitung kecepatan surge/sway/heave/yaw dengan damping, lalu mengirim pose ROV ke service Gazebo:
+
+```text
+/world/kki_rov_pool/set_pose
+```
+
+Jadi mode `wrench` saat ini adalah mode eksperimen gaya + pose assist, bukan klaim hidrodinamika penuh yang sudah tervalidasi.
 
 Batasan mode hydro:
 
@@ -582,11 +594,17 @@ src/rov_gamantaray_gazebo/models/kki_payload_D/model.sdf
 Setiap payload:
 
 - `static=false`,
-- punya massa 0.30 kg,
+- mengikuti geometri PDF: plate 5 cm x 10 cm x 0.6 cm, QR 4 cm x 4 cm di sisi depan, base 3 cm, dan lubang gantung 3 cm di atas QR,
+- punya massa 0.20 kg,
 - punya inertia,
-- punya `body_collision`,
-- punya `qr_top_plate_collision`,
-- punya friction dan contact stiffness.
+- punya collision plate yang dipecah menjadi lower plate, top plate, sisi kiri/kanan lubang, dan base foot,
+- punya friction dan contact stiffness,
+- punya `velocity_decay` supaya gerak payload cepat teredam,
+- punya `allow_auto_disable=true` supaya payload bisa sleep saat sudah diam.
+
+Alasan massa 0.20 kg: ukuran payload PDF kecil, tetapi massanya tetap dibuat lebih besar daripada gaya apung dari volume collision kecilnya agar payload tidak naik-turun sendiri di mode hydro. Nilai ini masih cukup ringan untuk digeser oleh respons kontak kinematic saat ROV/capit menabrak.
+
+Lubang gantung dibuat secara collision dengan menyisakan bukaan sekitar 3 cm pada bagian atas plate. Visual hitam di depan lubang hanya membantu tampilan supaya terlihat seperti lubang bundar; collision aktualnya tetap terbuka agar pasak hook dapat masuk. Pasak hook A/B/C/D dibuat silinder diameter 2 cm, sehingga lebih kecil dari lubang 3 cm.
 
 Masalah teknis:
 
@@ -646,6 +664,29 @@ Makna metode ini:
 - Respons kontak dibuat stabil untuk mode kinematic.
 - Ini bukan solver kontak fluida penuh, tetapi cukup untuk misi simulasi dan latihan operator.
 
+Saat payload sedang dijepit lalu gripper dibuka di dekat hook yang sesuai QR, `gripper_manager` mengaktifkan constraint gantung kinematic. Titik pivot constraint adalah pusat pasak hook, sedangkan titik pada payload yang dikunci adalah lubang gantung di atas QR. Dengan cara ini, lubang payload tetap berada pada pasak.
+
+Setelah masuk mode gantung, body payload tidak hanya ditempel diam. Node menghitung ayunan teredam:
+
+```text
+theta_ddot = -(g / L) * sin(theta) - damping * theta_dot
+```
+
+Keterangan:
+
+- `theta`: sudut ayunan payload terhadap posisi vertikal,
+- `L`: panjang efektif ayunan,
+- `damping`: redaman bawah air,
+- `theta_dot`: kecepatan sudut awal yang diambil dari kecepatan ROV saat melepas payload.
+
+Pose payload dihitung ulang dari pivot hook dan offset lubang payload:
+
+```text
+posisi_pusat_payload = posisi_pivot_hook - rotasi_payload * offset_lubang
+```
+
+Artinya lubang tetap sejajar dengan pasak, sedangkan badan payload bisa berayun kecil lalu mereda. Ini lebih realistis daripada snap pose satu kali, tetapi tetap disebut constraint kinematic karena belum membuat joint fisika dinamis Gazebo yang benar-benar baru saat runtime.
+
 ## 13. Deteksi QR Code
 
 Node:
@@ -657,7 +698,7 @@ src/rov_gamantaray_vision/rov_gamantaray_vision/qr_detector.py
 Input:
 
 ```text
-/rov/camera/bottom/image
+/rov/camera/wall/image
 ```
 
 Output:
@@ -707,13 +748,29 @@ src/rov_gamantaray_control/rov_gamantaray_control/mission_supervisor.py
 Aktif dengan:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true use_vision:=true
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=full use_vision:=true
 ```
 
-State machine:
+Profil autonomous:
+
+```text
+full                   -> misi lengkap dari scan sampai surface
+carry_release_surface  -> payload sudah dijepit, lanjut ke hook, release, surface
+release_surface        -> payload sudah dekat hook, release, surface
+```
+
+Untuk handoff otomatis setelah payload terjepit, parameter `auto_start_on_attached:=true` dapat dipakai bersama `mission_profile:=carry_release_surface` dan `command_source:=manual`. Pada mode ini, `mission_supervisor` tetap menunggu selama operator masih manual. Ketika `/rov/gripper_status` berubah menjadi `attached`, node mempublish `/rov/command_source = auto`, lalu state `go_to_hook` mulai menggerakkan ROV ke gantungan.
+
+State machine `full`:
 
 ```text
 scan_payload -> pick_payload -> go_to_hook -> release_payload -> surface
+```
+
+State machine misi nomor 5 langsung:
+
+```text
+release_payload -> surface -> complete
 ```
 
 Target hook:
@@ -745,6 +802,16 @@ cmd.linear.z = clamp(linear_gain * ez, -0.7, 0.7)
 ```
 
 4. Jika jarak ke target kurang dari `position_tolerance_m`, pindah state.
+
+Logika tambahan untuk misi nomor 5:
+
+1. Jika `command_source:=manual`, `mission_supervisor` menunggu `/rov/active_command_source` berubah menjadi `auto`.
+2. Setelah auto aktif, `release_payload` mengirim `/rov/gripper_cmd = 0.0`.
+3. `gripper_manager` mencoba memasukkan payload ke mode `hung` jika ROV/payload cukup dekat hook yang sesuai QR.
+4. `mission_supervisor` membaca `/rov/gripper_status`.
+5. Jika status gripper menjadi `hung`, autonomous lanjut ke `surface`.
+6. Pada `surface`, ROV menuju titik di atas hook dengan `z = surface_z`.
+7. Setelah target permukaan tercapai, state menjadi `complete` dan command gerak dibuat nol.
 
 Batasan:
 
@@ -794,7 +861,8 @@ Efek ini visual-only. Ia tidak memberi gaya balik ke ROV dan tidak mengubah fisi
 Di model ROV terdapat:
 
 - kamera depan/wall camera untuk melihat arah depan,
-- kamera bawah/bottom camera untuk QR,
+- kamera depan/wall camera juga menjadi kamera utama untuk QR samping payload,
+- kamera bawah/bottom camera untuk observasi lantai/dasar kolam,
 - IMU.
 
 Bridge ROS-Gazebo mengirim:
@@ -819,6 +887,10 @@ ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
 Kontrol:
 
 ```text
+/rov/manual_cmd_vel
+/rov/auto_cmd_vel
+/rov/command_source
+/rov/active_command_source
 /rov/cmd_vel
 /rov/gripper_cmd
 ```
@@ -846,8 +918,8 @@ State dan status:
 Vision:
 
 ```text
-/rov/camera/bottom/image
-/rov/camera/wall/image
+/rov/camera/wall/image   -> input default QR samping
+/rov/camera/bottom/image -> observasi bawah
 /rov/qr_code
 /rov/qr_debug/image
 ```
@@ -923,14 +995,14 @@ Field penting:
 Kalimat aman:
 
 ```text
-Simulasi ini merepresentasikan alur misi ROV KKI di Gazebo: kendali ROV, kamera bawah untuk QR, mekanisme gripper, collision payload, dan pemindahan payload ke hook. Mode default memakai model kinematic dengan damping agar real-time dan stabil untuk latihan operator. Visual air dibuat representatif bawah air, sedangkan klaim hidrodinamika penuh memerlukan kalibrasi tambahan menggunakan data uji kolam dan parameter fisik ROV asli.
+Simulasi ini merepresentasikan alur misi ROV KKI di Gazebo: kendali ROV, kamera depan/wall untuk QR samping, mekanisme gripper, collision payload, dan pemindahan payload ke hook. Mode default memakai model kinematic dengan damping agar real-time dan stabil untuk latihan operator. Visual air dibuat representatif bawah air, sedangkan klaim hidrodinamika penuh memerlukan kalibrasi tambahan menggunakan data uji kolam dan parameter fisik ROV asli.
 ```
 
 Yang boleh diklaim:
 
 - Workspace sesuai untuk simulasi misi KKI.
 - ROV bisa digerakkan dengan stik.
-- Payload QR bisa dibaca kamera bawah.
+- Payload QR samping bisa dibaca kamera depan/wall.
 - Gripper tidak mengambil payload kalau belum sejajar.
 - Payload bisa bergeser saat tersentuh ROV/capit.
 - Visual air menggambarkan kondisi bawah air.
