@@ -138,6 +138,30 @@
           <material><ambient>0.75 0.95 1.0 0.45</ambient><diffuse>0.75 0.95 1.0 0.45</diffuse></material>
           <transparency>0.55</transparency>
         </visual>
+        <visual name="meniscus_wall_x_pos">
+          <pose>4.96 0 0.012 0 0 0</pose>
+          <geometry><box><size>0.012 9.85 0.020</size></box></geometry>
+          <material><ambient>0.72 0.96 1.0 0.24</ambient><diffuse>0.72 0.96 1.0 0.24</diffuse><specular>0.90 1.0 1.0 0.65</specular></material>
+          <transparency>0.76</transparency>
+        </visual>
+        <visual name="meniscus_wall_x_neg">
+          <pose>-4.96 0 0.012 0 0 0</pose>
+          <geometry><box><size>0.012 9.85 0.020</size></box></geometry>
+          <material><ambient>0.72 0.96 1.0 0.24</ambient><diffuse>0.72 0.96 1.0 0.24</diffuse><specular>0.90 1.0 1.0 0.65</specular></material>
+          <transparency>0.76</transparency>
+        </visual>
+        <visual name="meniscus_wall_y_pos">
+          <pose>0 4.96 0.012 0 0 0</pose>
+          <geometry><box><size>9.85 0.012 0.020</size></box></geometry>
+          <material><ambient>0.72 0.96 1.0 0.24</ambient><diffuse>0.72 0.96 1.0 0.24</diffuse><specular>0.90 1.0 1.0 0.65</specular></material>
+          <transparency>0.76</transparency>
+        </visual>
+        <visual name="meniscus_wall_y_neg">
+          <pose>0 -4.96 0.012 0 0 0</pose>
+          <geometry><box><size>9.85 0.012 0.020</size></box></geometry>
+          <material><ambient>0.72 0.96 1.0 0.24</ambient><diffuse>0.72 0.96 1.0 0.24</diffuse><specular>0.90 1.0 1.0 0.65</specular></material>
+          <transparency>0.76</transparency>
+        </visual>
       </link>
       <pose>0 0 0 0 0 0</pose>
     </model>
@@ -156,6 +180,23 @@
         <visual name="ripple_8"><pose>-3.2 2.0 0 0 0 0.36</pose><geometry><box><size>1.9 0.018 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.28</ambient><diffuse>0.82 0.97 1.0 0.28</diffuse><specular>0.85 0.95 1.0 0.42</specular></material><transparency>0.72</transparency></visual>
         <visual name="ripple_9"><pose>0.0 2.8 0 0 0 -0.24</pose><geometry><box><size>3.0 0.017 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.22</ambient><diffuse>0.82 0.97 1.0 0.22</diffuse><specular>0.85 0.95 1.0 0.38</specular></material><transparency>0.78</transparency></visual>
         <visual name="ripple_10"><pose>3.4 3.1 0 0 0 0.17</pose><geometry><box><size>2.1 0.020 0.002</size></box></geometry><material><ambient>0.82 0.97 1.0 0.30</ambient><diffuse>0.82 0.97 1.0 0.30</diffuse><specular>0.85 0.95 1.0 0.45</specular></material><transparency>0.70</transparency></visual>
+      </link>
+    </model>
+
+    <model name="water_surface_wavefield">
+      <static>true</static>
+      <pose>0 0 0.019 0 0 0</pose>
+      <link name="link">
+        <visual name="wave_train_a_1"><pose>-3.8 -4.2 0 0 0 0.10</pose><geometry><box><size>1.8 0.010 0.002</size></box></geometry><material><ambient>0.75 0.96 1.0 0.20</ambient><diffuse>0.75 0.96 1.0 0.20</diffuse><specular>0.95 1.0 1.0 0.50</specular></material><transparency>0.80</transparency></visual>
+        <visual name="wave_train_a_2"><pose>-1.2 -3.8 0 0 0 0.10</pose><geometry><box><size>2.2 0.010 0.002</size></box></geometry><material><ambient>0.75 0.96 1.0 0.18</ambient><diffuse>0.75 0.96 1.0 0.18</diffuse><specular>0.95 1.0 1.0 0.48</specular></material><transparency>0.82</transparency></visual>
+        <visual name="wave_train_a_3"><pose>1.7 -3.4 0 0 0 0.10</pose><geometry><box><size>2.7 0.010 0.002</size></box></geometry><material><ambient>0.75 0.96 1.0 0.20</ambient><diffuse>0.75 0.96 1.0 0.20</diffuse><specular>0.95 1.0 1.0 0.50</specular></material><transparency>0.80</transparency></visual>
+        <visual name="wave_train_a_4"><pose>3.9 -2.9 0 0 0 0.10</pose><geometry><box><size>1.7 0.010 0.002</size></box></geometry><material><ambient>0.75 0.96 1.0 0.18</ambient><diffuse>0.75 0.96 1.0 0.18</diffuse><specular>0.95 1.0 1.0 0.48</specular></material><transparency>0.82</transparency></visual>
+        <visual name="wave_train_b_1"><pose>-4.1 -0.9 0 0 0 -0.32</pose><geometry><box><size>2.3 0.011 0.002</size></box></geometry><material><ambient>0.82 0.98 1.0 0.16</ambient><diffuse>0.82 0.98 1.0 0.16</diffuse><specular>0.95 1.0 1.0 0.44</specular></material><transparency>0.84</transparency></visual>
+        <visual name="wave_train_b_2"><pose>-1.5 -0.2 0 0 0 -0.32</pose><geometry><box><size>2.8 0.011 0.002</size></box></geometry><material><ambient>0.82 0.98 1.0 0.16</ambient><diffuse>0.82 0.98 1.0 0.16</diffuse><specular>0.95 1.0 1.0 0.44</specular></material><transparency>0.84</transparency></visual>
+        <visual name="wave_train_b_3"><pose>1.5 0.5 0 0 0 -0.32</pose><geometry><box><size>3.1 0.011 0.002</size></box></geometry><material><ambient>0.82 0.98 1.0 0.17</ambient><diffuse>0.82 0.98 1.0 0.17</diffuse><specular>0.95 1.0 1.0 0.46</specular></material><transparency>0.83</transparency></visual>
+        <visual name="wave_train_c_1"><pose>-3.3 3.0 0 0 0 0.42</pose><geometry><box><size>2.0 0.010 0.002</size></box></geometry><material><ambient>0.70 0.92 1.0 0.15</ambient><diffuse>0.70 0.92 1.0 0.15</diffuse><specular>0.95 1.0 1.0 0.42</specular></material><transparency>0.85</transparency></visual>
+        <visual name="wave_train_c_2"><pose>-0.4 3.2 0 0 0 0.42</pose><geometry><box><size>2.5 0.010 0.002</size></box></geometry><material><ambient>0.70 0.92 1.0 0.16</ambient><diffuse>0.70 0.92 1.0 0.16</diffuse><specular>0.95 1.0 1.0 0.44</specular></material><transparency>0.84</transparency></visual>
+        <visual name="wave_train_c_3"><pose>2.9 3.3 0 0 0 0.42</pose><geometry><box><size>2.2 0.010 0.002</size></box></geometry><material><ambient>0.70 0.92 1.0 0.15</ambient><diffuse>0.70 0.92 1.0 0.15</diffuse><specular>0.95 1.0 1.0 0.42</specular></material><transparency>0.85</transparency></visual>
       </link>
     </model>
 
@@ -329,16 +370,21 @@
     <include>
       <name>gamantaray_rov_left_gripper_jaw</name>
       <uri>model://@LEFT_GRIPPER_JAW_URI@</uri>
-      <pose>-2.942 0.066 -0.425 0 0 0.46</pose>
+      <pose>-2.956 0.052 -0.392 0 0 0.34</pose>
     </include>
     <include>
       <name>gamantaray_rov_right_gripper_jaw</name>
       <uri>model://@RIGHT_GRIPPER_JAW_URI@</uri>
-      <pose>-2.942 -0.066 -0.425 0 0 -0.46</pose>
+      <pose>-2.956 -0.052 -0.392 0 0 -0.34</pose>
     </include>
     <include>
       <name>rov_surface_wake</name>
       <uri>model://rov_surface_wake</uri>
+      <pose>0 0 6 0 0 0</pose>
+    </include>
+    <include>
+      <name>rov_thruster_wash</name>
+      <uri>model://rov_thruster_wash</uri>
       <pose>0 0 6 0 0 0</pose>
     </include>
     @KINEMATIC_PROP_VISUALS@
@@ -347,6 +393,11 @@
       <name>kki_payload_@PAYLOAD_CODE@</name>
       <uri>model://kki_payload_@PAYLOAD_CODE@</uri>
       <pose>0 0 -0.79 0 0 0</pose>
+    </include>
+    <include>
+      <name>held_payload_collision_proxy</name>
+      <uri>model://held_payload_collision_proxy</uri>
+      <pose>0 0 6 0 0 0</pose>
     </include>
   </world>
 </sdf>

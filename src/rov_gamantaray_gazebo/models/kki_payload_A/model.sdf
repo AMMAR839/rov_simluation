@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <sdf version="1.9">
   <model name="kki_payload_A">
-    <static>true</static>
+    <static>false</static>
+    <self_collide>false</self_collide>
+    <allow_auto_disable>false</allow_auto_disable>
     <link name="payload_link">
       <inertial>
         <mass>0.30</mass>
@@ -16,6 +18,18 @@
       </inertial>
       <collision name="body_collision">
         <geometry><box><size>0.06 0.06 0.10</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction>
+          <contact><ode><kp>80000</kp><kd>8</kd></ode></contact>
+        </surface>
+      </collision>
+      <collision name="qr_top_plate_collision">
+        <pose>0 0 0.052 0 0 0</pose>
+        <geometry><box><size>0.08 0.08 0.004</size></box></geometry>
+        <surface>
+          <friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction>
+          <contact><ode><kp>60000</kp><kd>6</kd></ode></contact>
+        </surface>
       </collision>
       <visual name="body_visual">
         <geometry><box><size>0.06 0.06 0.10</size></box></geometry>

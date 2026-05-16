@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="rov_thruster_wash">
+    <static>true</static>
+    <link name="link">
+      <visual name="center_turbulence">
+        <pose>-0.34 0 0 0 0 0</pose>
+        <geometry><box><size>0.72 0.18 0.030</size></box></geometry>
+        <material>
+          <ambient>0.45 0.80 0.90 0.10</ambient>
+          <diffuse>0.45 0.80 0.90 0.10</diffuse>
+          <specular>0.60 0.90 1.0 0.22</specular>
+        </material>
+        <transparency>0.90</transparency>
+      </visual>
+      <visual name="left_thruster_stream">
+        <pose>-0.26 0.095 0 0 0 0.08</pose>
+        <geometry><box><size>0.62 0.030 0.026</size></box></geometry>
+        <material><ambient>0.70 0.95 1.0 0.20</ambient><diffuse>0.70 0.95 1.0 0.20</diffuse><specular>0.75 0.98 1.0 0.36</specular></material>
+        <transparency>0.80</transparency>
+      </visual>
+      <visual name="right_thruster_stream">
+        <pose>-0.26 -0.095 0 0 0 -0.08</pose>
+        <geometry><box><size>0.62 0.030 0.026</size></box></geometry>
+        <material><ambient>0.70 0.95 1.0 0.20</ambient><diffuse>0.70 0.95 1.0 0.20</diffuse><specular>0.75 0.98 1.0 0.36</specular></material>
+        <transparency>0.80</transparency>
+      </visual>
+      <visual name="upper_shear">
+        <pose>-0.42 0 0.045 0 0 0.18</pose>
+        <geometry><box><size>0.82 0.018 0.016</size></box></geometry>
+        <material><ambient>0.78 0.98 1.0 0.16</ambient><diffuse>0.78 0.98 1.0 0.16</diffuse><specular>0.80 1.0 1.0 0.30</specular></material>
+        <transparency>0.84</transparency>
+      </visual>
+      <visual name="lower_shear">
+        <pose>-0.42 0 -0.045 0 0 -0.18</pose>
+        <geometry><box><size>0.82 0.018 0.016</size></box></geometry>
+        <material><ambient>0.78 0.98 1.0 0.16</ambient><diffuse>0.78 0.98 1.0 0.16</diffuse><specular>0.80 1.0 1.0 0.30</specular></material>
+        <transparency>0.84</transparency>
+      </visual>
+      <visual name="bubble_1"><pose>-0.18 0.050 0.035 0 0 0</pose><geometry><sphere><radius>0.012</radius></sphere></geometry><material><ambient>0.85 0.98 1.0 0.32</ambient><diffuse>0.85 0.98 1.0 0.32</diffuse></material><transparency>0.68</transparency></visual>
+      <visual name="bubble_2"><pose>-0.30 -0.070 -0.018 0 0 0</pose><geometry><sphere><radius>0.008</radius></sphere></geometry><material><ambient>0.85 0.98 1.0 0.28</ambient><diffuse>0.85 0.98 1.0 0.28</diffuse></material><transparency>0.72</transparency></visual>
+      <visual name="bubble_3"><pose>-0.48 0.015 0.055 0 0 0</pose><geometry><sphere><radius>0.010</radius></sphere></geometry><material><ambient>0.85 0.98 1.0 0.30</ambient><diffuse>0.85 0.98 1.0 0.30</diffuse></material><transparency>0.70</transparency></visual>
+      <visual name="bubble_4"><pose>-0.58 -0.090 0.018 0 0 0</pose><geometry><sphere><radius>0.006</radius></sphere></geometry><material><ambient>0.85 0.98 1.0 0.25</ambient><diffuse>0.85 0.98 1.0 0.25</diffuse></material><transparency>0.75</transparency></visual>
+      <visual name="bubble_5"><pose>-0.66 0.080 -0.040 0 0 0</pose><geometry><sphere><radius>0.007</radius></sphere></geometry><material><ambient>0.85 0.98 1.0 0.25</ambient><diffuse>0.85 0.98 1.0 0.25</diffuse></material><transparency>0.75</transparency></visual>
+    </link>
+  </model>
+</sdf>

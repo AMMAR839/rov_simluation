@@ -5,8 +5,8 @@ Workspace ini adalah simulasi ROS 2 Jazzy + Gazebo Harmonic untuk ROV bawah air 
 Fitur utama:
 
 - arena kolam 10 m x 10 m dengan kedalaman representatif 0.85 m,
-- visual bawah air: volume air transparan, permukaan air, ripple, gelembung, caustic lantai, marka dasar, dan dinding kolam,
-- ROV default `rov_variant:=github_blue` memakai mesh BlueROV2 + T200 propeller dari GitHub `evan-palmer/blue`, dengan claw gripper dari GitHub Ricketts yang dianimasikan,
+- visual bawah air: volume air transparan, permukaan air, wavefield ringan, ripple, wake, thruster wash, gelembung, caustic lantai, marka dasar, dan dinding kolam,
+- ROV default `rov_variant:=github_blue` memakai mesh BlueROV2 + T200 propeller dari GitHub `evan-palmer/blue`, dengan gripper bawah-depan custom yang dibuat menyatu dengan rangka ROV dan rahang claw yang dianimasikan,
 - 6 thruster dengan propeller visual yang ikut berputar saat command aktif, kamera depan, kamera bawah, gripper, payload QR A/B/C/D, dan hook A/B/C/D,
 - kontrol manual dengan stik/gamepad, kontrol keyboard opsional, deteksi QR opsional, dan mission supervisor sederhana.
 
@@ -87,7 +87,7 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true payload_
 Pilih model ROV:
 
 ```bash
-# default: GitHub BlueROV2-style + Ricketts gripper claw
+# default: GitHub BlueROV2-style + gripper claw custom terintegrasi
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue
 
 # alternatif lama dari folder lokal, tetap tersedia untuk pembanding visual
@@ -138,6 +138,9 @@ Keyboard teleop sekarang dibuat momentary berbasis timeout: ROV bergerak saat to
 - `docs/kki_mission_alignment.md`: checklist kesesuaian workspace terhadap misi PDF.
 - `docs/validation_notes.md`: batas klaim simulasi, air, thruster, dan kebutuhan data uji asli.
 - `docs/github_reference_selection.md`: referensi GitHub/official yang cocok untuk pengembangan ROV, air, hydrodynamics, dan gripper.
+- `docs/custom_rov_modeling_guide.md`: panduan membuat model ROV sendiri, termasuk thruster, propeller, kamera, lampu, gripper, dan variant launch.
+- `docs/metode_dan_logika_workspace.md`: penjelasan lengkap logika launch, kontrol, gripper, collision payload, QR, air, misi, dan batas klaim simulasi.
+- `docs/cara_menjalankan_workspace.md`: panduan lengkap menjalankan workspace, stik Xbox, keyboard, kamera QR, payload, autonomous, hydro, monitoring topic, dan troubleshooting.
 
 ## Kesesuaian Dengan Misi PDF
 
@@ -174,18 +177,24 @@ Placeholder yang diganti saat launch:
 - `@PHYSICS_STEP_SIZE@`: `0.005` untuk kinematic, `0.001` untuk hydro,
 - `@HYDRO_WORLD_PLUGINS@`: plugin buoyancy dan apply wrench hanya dimasukkan di mode hydro.
 
-Visual air bukan CFD. Ini visual representatif bawah air agar arena terbaca: air transparan, permukaan, fog, haze kedalaman, ripple, bubble, caustic, warna gelap kebiruan, dan lampu kolam. Ada juga node `water_effects_driver` yang menggerakkan visual wake/riak permukaan saat ROV bergerak dekat permukaan. World air dari `rov_gamantaray_1` dan `rov_gamantaray_2` tidak disalin langsung karena di referensi tersebut visual air utamanya hanya `water_plane` biru sederhana.
+Visual air bukan CFD. Ini visual representatif bawah air agar arena terbaca: air transparan, permukaan, fog, haze kedalaman, ripple, wavefield ringan, bubble, caustic, warna gelap kebiruan, dan lampu kolam. Ada juga node `water_effects_driver` yang menggerakkan visual wake/riak permukaan saat ROV bergerak dekat permukaan dan visual thruster wash saat ROV bergerak di bawah air. World air dari `rov_gamantaray_1` dan `rov_gamantaray_2` tidak disalin langsung karena di referensi tersebut visual air utamanya hanya `water_plane` biru sederhana.
+
+Referensi yang dipakai untuk keputusan air:
+
+- `gazebosim/gz-sim`: acuan utama untuk buoyancy, hydrodynamics, dan thruster di Gazebo Sim.
+- `osrf/vrx`: acuan visual wavefield/wake untuk lingkungan maritim, tetapi tidak dimasukkan penuh karena VRX fokus USV permukaan laut, bukan kolam ROV kecil.
+- `rock-gazebo/simulation-gazebo_underwater`: dipakai sebagai referensi konsep damping, buoyancy, dan added inertia; pluginnya tidak langsung dipakai karena itu plugin Gazebo Classic lama, bukan Gazebo Harmonic.
 
 ### 2. Model ROV
 
 Model utama yang dikendalikan Gazebo tetap bernama `gamantaray_rov`, tetapi URI modelnya bisa dipilih lewat `rov_variant`.
 
-- `rov_variant:=github_blue`: default baru. Body ROV dan T200 propeller diambil dari GitHub `evan-palmer/blue` karena lisensinya MIT dan layout thruster-nya jelas. Mesh body diskalakan agar body + thruster berada dalam batas 35 x 35 x 35 cm dari PDF; gripper boleh berada di luar dimensi ROV sesuai PDF. Gripper memakai mesh claw dari GitHub Ricketts karena punya model gripper terpisah dan juga MIT.
+- `rov_variant:=github_blue`: default baru. Body ROV dan T200 propeller diambil dari GitHub `evan-palmer/blue` karena lisensinya MIT dan layout thruster-nya jelas. Mesh body diskalakan agar body + thruster berada dalam batas 35 x 35 x 35 cm dari PDF; gripper boleh berada di luar dimensi ROV sesuai PDF. Gripper bawah-depan dibuat ulang sebagai assembly SDF custom: saddle ke rangka, housing aktuator, cheek plate, pin pivot, dan dua rahang claw animasi. Jadi gripper tidak lagi terlihat seperti mesh mentah yang ditempel di depan ROV.
 - `rov_variant:=bluerov`: alternatif lama dari `rov_gamantaray_2`. Ini tetap ada untuk pembanding, tetapi bukan default karena gripper aslinya tidak sepaket dengan mesh tersebut.
 
 Varian Beaumont dari `rov_gamantaray_1` tidak lagi dibuat sebagai opsi launch karena bentuknya tidak rapi saat dipakai di arena ini. Folder referensi lokal tetap berguna untuk memahami ide claw, tetapi model yang dipakai sekarang berasal dari GitHub yang lisensinya jelas.
 
-Model dibuat static agar bisa digerakkan langsung oleh ROS melalui service Gazebo `set_pose`. Mekanisme attach/release payload tetap mengikuti kebutuhan gripper misi KKI.
+Model ROV dibuat static agar bisa digerakkan langsung oleh ROS melalui service Gazebo `set_pose`. Payload A/B/C/D dibuat non-static/dinamis, sehingga punya massa, collision, dan bisa bergeser saat tersentuh. Karena ROV dan capit default masih digerakkan kinematic, `gripper_manager` menambahkan respons kontak kecil: saat body ROV atau capit masuk zona collision payload sambil bergerak ke arah payload, pose payload digeser di lantai kolam. Ini membuat arti collide terlihat di simulasi tanpa membuat ROV jitter atau tembus lantai.
 
 Model berisi:
 
@@ -195,7 +204,7 @@ Model berisi:
 - kamera depan,
 - kamera bawah,
 - IMU,
-- gripper visual.
+- gripper visual terintegrasi di bawah-depan body.
 
 Di mode kinematic, propeller dibuat sebagai enam model visual terpisah: `gamantaray_rov_thruster1_prop_visual` sampai `gamantaray_rov_thruster6_prop_visual`. Pada `rov_variant:=github_blue`, posisi dan orientasi propeller mengikuti `blue_description/description/bluerov2/urdf.xacro` dari GitHub `evan-palmer/blue`, sehingga pusat propeller berada di duct/ring model BlueROV2. Node `kinematic_driver` menghitung pose setiap propeller dari pose ROV, offset thruster, orientasi referensi, dan spin angle berdasarkan nilai `/rov/thruster_status`. Jadi propeller yang terlihat berputar adalah indikator visual command thruster, bukan sumber gaya fisika.
 
@@ -261,7 +270,7 @@ Urutan logika:
 
 Ini bukan fisika hidrodinamika penuh, tetapi sekarang geraknya diberi lag/damping agar lebih terasa seperti ROV di air. Parameter yang bisa dituning: `linear_response_s`, `vertical_response_s`, `yaw_response_s`, `attitude_response_s`, dan `max_visual_tilt_rad`.
 
-### 5a. Animasi propeller
+### 5a. Animasi propeller dan efek air
 
 Propeller visual menerima spin angle dari nilai thruster:
 
@@ -272,6 +281,13 @@ prop_angle = prop_angle + prop_speed * dt
 
 Nilai default `prop_spin_gain_rad_s = 60.0`. Setiap propeller adalah model visual terpisah yang posenya dihitung ulang dari pose ROV, offset thruster, orientasi referensi BlueROV2, dan `prop_angle`. Kalau command nol, `prop_speed` nol sehingga propeller berhenti di sudut terakhir.
 
+`water_effects_driver` menggerakkan dua model visual:
+
+- `rov_surface_wake`: muncul saat ROV bergerak dekat permukaan air.
+- `rov_thruster_wash`: muncul saat ROV bergerak di bawah air untuk menggambarkan pusaran/bubble akibat thruster.
+
+Efek ini visual-only. Ia tidak mengubah gaya fisika ROV, tetapi membantu tampilan bawah air lebih realistis saat diuji di Gazebo.
+
 ### 6. Gripper dan payload
 
 Node `gripper_manager` menerima `/rov/gripper_cmd`:
@@ -279,14 +295,38 @@ Node `gripper_manager` menerima `/rov/gripper_cmd`:
 - `0.0`: buka,
 - `1.0`: tutup.
 
-Rahang gripper dianimasikan oleh `gripper_manager` sebagai dua model visual terpisah: `gamantaray_rov_left_gripper_jaw` dan `gamantaray_rov_right_gripper_jaw`. Nilai `/rov/gripper_cmd` tidak lagi langsung mengambil payload. Payload baru dianggap terjepit jika semua syarat ini terpenuhi:
+Rahang gripper dianimasikan oleh `gripper_manager` sebagai dua model visual terpisah: `gamantaray_rov_left_gripper_jaw` dan `gamantaray_rov_right_gripper_jaw`. Pivot rahang ditempatkan di pin gripper bawah-depan ROV, dengan bukaan default lebih rapat supaya claw terlihat seperti mekanik penjepit, bukan tangan lepas dari body. Nilai `/rov/gripper_cmd` tidak lagi langsung mengambil payload. Payload baru dianggap terjepit jika semua syarat ini terpenuhi:
 
 - gripper sedang menutup dan sudah hampir mencapai posisi tertutup,
 - pusat payload berada di depan gripper, bukan sekadar dekat dengan ROV,
 - error depan-belakang, kiri-kanan, dan tinggi masih dalam toleransi capture,
 - bukaan rahang sudah cukup kecil untuk menjepit payload.
 
-Selama attached, pose payload dipindahkan ke tengah rahang gripper melalui service Gazebo `set_pose`. Saat gripper dibuka, payload dilepas di posisi terakhir. Status alignment bisa dilihat lewat:
+Payload A/B/C/D punya collision body dan collision plate di bagian QR atas, serta dibuat `static=false` supaya bisa bergeser di lantai kolam. Rahang gripper juga punya collision pada pivot hub, finger, hook tip, dan rear bridge. Pada mode default kinematic, `gripper_manager` membaca pose payload dari `/world/kki_rov_pool/pose/info`, lalu memberi respons dorong saat ROV/capit menyentuh payload dan sedang bergerak ke arah payload. Jadi kalau `kki_payload_A` ditabrak dari depan/samping oleh ROV atau capit, payload akan bergeser, bukan hanya diam sebagai visual.
+
+Saat payload sedang attached, model `held_payload_collision_proxy` ikut dipindahkan ke posisi payload. Proxy ini punya collision dan visual hijau transparan supaya collision benda yang sedang diangkat terlihat jelas di Gazebo.
+
+Collision ROV dan capit berada di file berikut:
+
+- ROV/body: `src/rov_gamantaray_description/models/gamantaray_rov_github_blue_gripper/model.sdf`
+  - `body_collision`
+  - `gripper_saddle_collision`
+  - `gripper_neck_collision`
+  - `gripper_left_cheek_collision`
+  - `gripper_right_cheek_collision`
+  - `gripper_cross_pin_collision`
+- Capit kiri/kanan: `src/rov_gamantaray_description/models/gamantaray_gripper_ricketts_left_jaw_visual/model.sdf` dan `gamantaray_gripper_ricketts_right_jaw_visual/model.sdf`
+  - `pivot_hub_collision`
+  - `outer_finger_collision`
+  - `inner_finger_collision`
+  - `front_hook_tip_collision`
+  - `rear_bridge_collision`
+
+Untuk memudahkan pengecekan di Gazebo, collision ROV dan capit juga diberi visual debug hijau transparan dengan nama `*_collision_debug_visual`. Ini bukan pengganti collision fisika; ini hanya overlay agar bentuk collision langsung terlihat di GUI.
+
+Pada mode default `physics_mode:=kinematic`, pengambilan payload tetap memakai logika alignment dari `gripper_manager`, bukan gaya kontak murni, supaya simulasi stabil dan tidak bergantung pada solver kontak kecil yang mudah jitter. Collision untuk dorong/geser tetap aktif melalui respons kontak kinematic di node yang sama.
+
+Selama attached, pose payload dipindahkan ke tengah rahang gripper melalui service Gazebo `set_pose`. Saat gripper dibuka, payload dilepas di posisi terakhir. Status alignment dan tabrakan bisa dilihat lewat:
 
 ```bash
 ros2 topic echo /rov/gripper_status
@@ -295,6 +335,42 @@ ros2 topic echo /rov/gripper_status
 ### 7. Deteksi QR
 
 Node `qr_detector` memakai OpenCV `QRCodeDetector` pada `/rov/camera/bottom/image`.
+
+Jalankan simulasi dengan vision aktif:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true
+```
+
+Lihat kamera bawah untuk QR:
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rov/camera/bottom/image
+```
+
+Lihat kamera depan:
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rov/camera/wall/image
+```
+
+Lihat gambar debug hasil deteksi QR:
+
+```bash
+ros2 run rqt_image_view rqt_image_view /rov/qr_debug/image
+```
+
+Lihat hasil huruf QR:
+
+```bash
+ros2 topic echo /rov/qr_code
+```
+
+Kalau `rqt_image_view` belum ada:
+
+```bash
+sudo apt install ros-jazzy-rqt-image-view
+```
 
 Alurnya:
 
@@ -367,11 +443,12 @@ Untuk mengubah arena:
 
 Untuk mengubah model ROV:
 
-- GitHub BlueROV2 + Ricketts gripper default ada di `src/rov_gamantaray_description/models/gamantaray_rov_github_blue_gripper`,
+- GitHub BlueROV2 + gripper custom terintegrasi default ada di `src/rov_gamantaray_description/models/gamantaray_rov_github_blue_gripper`,
 - propeller T200 GitHub ada di `gamantaray_blue_t200_prop_cw_visual` dan `gamantaray_blue_t200_prop_ccw_visual`,
-- rahang gripper Ricketts ada di `gamantaray_gripper_ricketts_left_jaw_visual` dan `gamantaray_gripper_ricketts_right_jaw_visual`,
+- rahang gripper animasi ada di `gamantaray_gripper_ricketts_left_jaw_visual` dan `gamantaray_gripper_ricketts_right_jaw_visual`; nama folder masih membawa nama referensi lama, tetapi geometri aktifnya sudah dibuat ulang sebagai claw SDF custom,
 - BlueROV2 lokal lama ada di `src/rov_gamantaray_description/models/gamantaray_rov`,
 - pilih model saat launch dengan `rov_variant:=github_blue` atau `rov_variant:=bluerov`.
+- panduan membuat model sendiri ada di `docs/custom_rov_modeling_guide.md`.
 
 Untuk mengembangkan autonomous:
 

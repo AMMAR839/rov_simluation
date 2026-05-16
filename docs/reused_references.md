@@ -24,8 +24,10 @@ Hal yang diambil dari `/home/ammar/Documents/rov_gamantaray_2`:
 - penggunaan plugin bawaan Gazebo untuk thruster dan hydrodynamics,
 - pola bridge ROS-Gazebo untuk command thruster, kamera, dan odometry.
 - mesh `bluerov2_noprop.dae` tetap tersedia di `rov_variant:=bluerov` sebagai pembanding lama.
-- default baru memakai `rov_variant:=github_blue`, yaitu mesh BlueROV2 dan T200 propeller dari GitHub `evan-palmer/blue` ditambah claw gripper dari GitHub Ricketts.
+- default baru memakai `rov_variant:=github_blue`, yaitu mesh BlueROV2 dan T200 propeller dari GitHub `evan-palmer/blue` ditambah gripper bawah-depan custom yang dibuat sebagai geometri SDF agar menyatu dengan body ROV. Asset Ricketts tetap disimpan sebagai referensi lokal, tetapi visual aktif claw sudah dibuat ulang.
 - posisi dan orientasi propeller default mengikuti `blue_description/description/bluerov2/urdf.xacro` dari repo GitHub tersebut, lalu diskalakan agar body + thruster berada di batas 35 x 35 x 35 cm sesuai PDF.
+- visual air sekarang mengambil konsep wavefield/wake dari `osrf/vrx`, tetapi tidak memasukkan full dependency VRX karena targetnya USV laut terbuka.
+- fisika air mengacu ke dokumentasi `gazebosim/gz-sim` untuk buoyancy, hydrodynamics, dan thruster. Plugin `rock-gazebo/simulation-gazebo_underwater` tidak dipakai langsung karena dibuat untuk Gazebo Classic lama.
 
 Keputusan implementasi baru:
 

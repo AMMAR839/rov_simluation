@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <model name="held_payload_collision_proxy">
+    <static>true</static>
+    <link name="proxy_link">
+      <collision name="held_payload_body_collision">
+        <geometry><box><size>0.064 0.064 0.104</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.2</mu><mu2>1.2</mu2></ode></friction>
+          <contact><ode><kp>90000</kp><kd>9</kd></ode></contact>
+        </surface>
+      </collision>
+      <collision name="held_payload_qr_plate_collision">
+        <pose>0 0 0.052 0 0 0</pose>
+        <geometry><box><size>0.084 0.084 0.006</size></box></geometry>
+        <surface>
+          <friction><ode><mu>0.9</mu><mu2>0.9</mu2></ode></friction>
+          <contact><ode><kp>70000</kp><kd>7</kd></ode></contact>
+        </surface>
+      </collision>
+      <visual name="collision_proxy_body_visual">
+        <geometry><box><size>0.064 0.064 0.104</size></box></geometry>
+        <material>
+          <ambient>0.00 0.95 0.25 0.20</ambient>
+          <diffuse>0.00 0.95 0.25 0.20</diffuse>
+          <specular>0.60 1.00 0.70 0.35</specular>
+        </material>
+        <transparency>0.80</transparency>
+      </visual>
+      <visual name="collision_proxy_qr_plate_visual">
+        <pose>0 0 0.054 0 0 0</pose>
+        <geometry><box><size>0.084 0.084 0.004</size></box></geometry>
+        <material>
+          <ambient>0.00 1.00 0.45 0.25</ambient>
+          <diffuse>0.00 1.00 0.45 0.25</diffuse>
+          <specular>0.60 1.00 0.70 0.35</specular>
+        </material>
+        <transparency>0.75</transparency>
+      </visual>
+    </link>
+  </model>
+</sdf>

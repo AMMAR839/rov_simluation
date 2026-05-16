@@ -24,15 +24,22 @@ Klaim yang perlu data uji:
 
 ## Air
 
-Air di Gazebo dibuat sebagai representasi visual kolam bawah air. Elemen seperti tint, transparansi, ripple, gelembung, dan caustic dipakai agar kamera dan operator melihat arena seperti lingkungan bawah air.
+Air di Gazebo dibuat sebagai representasi visual kolam bawah air. Elemen seperti tint, transparansi, ripple, wavefield ringan, thruster wash, gelembung, dan caustic dipakai agar kamera dan operator melihat arena seperti lingkungan bawah air.
 
-World air di `/home/ammar/Documents/rov_gamantaray_1` dan `/home/ammar/Documents/rov_gamantaray_2` tidak disalin langsung karena visual airnya hanya berupa plane biru transparan (`water_plane`). Bagian yang lebih penting dari referensi tersebut adalah ide buoyancy, hydrodynamics, ukuran density air, layout thruster, dan pola world Gazebo. Workspace ini memakai air visual yang lebih lengkap untuk kolam KKI: permukaan, volume transparan, fog, haze kedalaman, ripple, bubble, caustic, dan wake visual yang mengikuti ROV saat dekat permukaan.
+World air di `/home/ammar/Documents/rov_gamantaray_1` dan `/home/ammar/Documents/rov_gamantaray_2` tidak disalin langsung karena visual airnya hanya berupa plane biru transparan (`water_plane`). Bagian yang lebih penting dari referensi tersebut adalah ide buoyancy, hydrodynamics, ukuran density air, layout thruster, dan pola world Gazebo. Workspace ini memakai air visual yang lebih lengkap untuk kolam KKI: permukaan, volume transparan, fog, haze kedalaman, ripple, wavefield ringan, bubble, caustic, wake visual saat dekat permukaan, dan thruster wash saat ROV bergerak di bawah air.
+
+Referensi eksternal dipakai dengan batas yang jelas:
+
+- `gazebosim/gz-sim` dipakai sebagai acuan utama untuk jalur fisika Gazebo Harmonic: `Buoyancy`, `Hydrodynamics`, dan `Thruster`.
+- `osrf/vrx` dipakai sebagai acuan visual wavefield/wake, bukan sebagai full dependency.
+- `rock-gazebo/simulation-gazebo_underwater` tidak dipakai langsung karena plugin tersebut untuk Gazebo Classic lama; konsep buoyancy/damping-nya tetap relevan.
 
 Klaim aman:
 
 - geometri kolam dan kedalaman air dibuat sesuai asumsi arena,
 - visual bawah air membantu simulasi misi dan pembacaan kamera,
 - riak permukaan adalah efek visual berbasis posisi/kecepatan ROV,
+- thruster wash adalah efek visual berbasis odometry ROV, bukan solver turbulensi,
 - mode default cocok untuk pengujian alur misi dan ergonomi kontrol.
 
 Klaim yang perlu data uji:

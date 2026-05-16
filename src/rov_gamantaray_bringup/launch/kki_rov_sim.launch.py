@@ -46,8 +46,8 @@ def launch_setup(context, *args, **kwargs):
     prop_layout = "none"
     if physics_mode == "hydro":
         rov_model_uri = "gamantaray_rov_hydro"
-        left_gripper_jaw_uri = "gamantaray_gripper_left_jaw_visual"
-        right_gripper_jaw_uri = "gamantaray_gripper_right_jaw_visual"
+        left_gripper_jaw_uri = "gamantaray_gripper_ricketts_left_jaw_visual"
+        right_gripper_jaw_uri = "gamantaray_gripper_ricketts_right_jaw_visual"
     elif rov_variant == "github_blue":
         rov_model_uri = "gamantaray_rov_github_blue_gripper"
         left_gripper_jaw_uri = "gamantaray_gripper_ricketts_left_jaw_visual"

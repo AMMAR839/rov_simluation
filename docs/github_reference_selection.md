@@ -9,12 +9,15 @@ Tujuan dokumen ini adalah memilih referensi yang benar-benar berguna untuk works
 Yang dipakai langsung di workspace:
 
 - `evan-palmer/blue`: mesh BlueROV2 dan T200 propeller. Alasannya: ROS 2 underwater, layout 6 thruster jelas, dan lisensi MIT.
-- `AlePuglisi/ROV-Ricketts-ros2`: mesh `grip_claw.stl` dan `arm_link5.stl` untuk visual gripper. Alasannya: punya mesh gripper terpisah dan lisensi MIT.
+- `AlePuglisi/ROV-Ricketts-ros2`: mesh `grip_claw.stl` dan `arm_link5.stl` disimpan sebagai referensi gripper lokal. Visual aktif gripper kemudian dibuat ulang sebagai geometri SDF custom supaya pivot, rahang, dan dudukannya lebih menyatu dengan model ROV.
+- `gazebosim/gz-sim`: acuan plugin `Buoyancy`, `Hydrodynamics`, `Thruster`, dan pola `JointPositionController` untuk model bawah air di Gazebo Sim.
+- `osrf/vrx`: acuan visual wavefield dan wake. Yang diambil adalah konsep visual gelombang/riak, bukan full stack VRX.
 
 Yang tidak dipakai langsung:
 
 - `rov_gamantaray_1` Beaumont: sudah dicoba sebagai varian lokal, tetapi visualnya tidak rapi di arena KKI sehingga tidak lagi dijadikan opsi launch.
 - `Robotic-Decision-Making-Lab/reach` dan dependency `alpha`: konsepnya bagus untuk Reach Alpha 5, tetapi lisensi mesh membatasi penggunaan untuk produk Reach Robotics. Karena itu aset mesh-nya tidak dicopy ke workspace ini.
+- `rock-gazebo/simulation-gazebo_underwater`: tidak dipakai sebagai plugin langsung karena targetnya Gazebo Classic lama. Konsep yang relevan tetap dipakai sebagai referensi: buoyancy, damping, center of buoyancy, dan added inertia.
 - Full stack Angler/Blue/Ricketts: tidak dimasukkan penuh karena terlalu besar untuk target latihan KKI. Workspace hanya mengambil model/mesh kecil yang relevan, sedangkan kontrol, world KKI, QR, dan gripper manager tetap kode lokal.
 
 ### 1. `clydemcqueen/bluerov2_gz`
@@ -149,7 +152,7 @@ Yang paling masuk akal untuk lomba KKI:
 2. Ambil konsep/model kecil, bukan clone semua repo besar.
 3. Prioritas perbaikan berikutnya:
    - pilihan model ROV `rov_variant:=github_blue|bluerov`,
-   - gripper visual berbasis mesh Ricketts claw,
+   - gripper visual custom terintegrasi, dengan asset Ricketts hanya sebagai referensi lokal,
    - motion model kinematic dengan lag/damping agar terasa di air,
    - mode hydro yang memakai parameter dari BlueROV2/Gazebo official kalau sudah ada data massa dan buoyancy ROV.
 
