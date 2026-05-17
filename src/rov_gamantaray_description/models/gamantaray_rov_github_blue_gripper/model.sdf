@@ -26,63 +26,93 @@
             <size>0.35 0.26 0.14</size>
           </box>
         </geometry>
+        <surface>
+          <friction><ode><mu>1.1</mu><mu2>1.1</mu2><slip1>0.02</slip1><slip2>0.02</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>60000</kp><kd>150</kd><max_vel>0.05</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
       </collision>
       <collision name="gripper_saddle_collision">
-        <pose>0.184 0 -0.078 0 0 0</pose>
-        <geometry><box><size>0.072 0.118 0.022</size></box></geometry>
+        <pose>0.180 0 -0.080 0 0 0</pose>
+        <geometry><box><size>0.040 0.060 0.012</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.4</mu><mu2>1.4</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>70000</kp><kd>170</kd><max_vel>0.04</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
       </collision>
       <collision name="gripper_neck_collision">
-        <pose>0.220 0 -0.098 0 0 0</pose>
-        <geometry><box><size>0.078 0.056 0.034</size></box></geometry>
+        <pose>0.210 0 -0.098 0 0 0</pose>
+        <geometry><box><size>0.038 0.030 0.018</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.4</mu><mu2>1.4</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>70000</kp><kd>170</kd><max_vel>0.04</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
       </collision>
       <collision name="gripper_left_cheek_collision">
-        <pose>0.238 0.052 -0.112 0 0 0</pose>
-        <geometry><box><size>0.076 0.014 0.066</size></box></geometry>
+        <pose>0.244 0.050 -0.112 0 0 0</pose>
+        <geometry><box><size>0.058 0.010 0.048</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.6</mu><mu2>1.6</mu2><slip1>0.008</slip1><slip2>0.008</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>80000</kp><kd>200</kd><max_vel>0.035</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
       </collision>
       <collision name="gripper_right_cheek_collision">
-        <pose>0.238 -0.052 -0.112 0 0 0</pose>
-        <geometry><box><size>0.076 0.014 0.066</size></box></geometry>
+        <pose>0.244 -0.050 -0.112 0 0 0</pose>
+        <geometry><box><size>0.058 0.010 0.048</size></box></geometry>
+        <surface>
+          <friction><ode><mu>1.6</mu><mu2>1.6</mu2><slip1>0.008</slip1><slip2>0.008</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>80000</kp><kd>200</kd><max_vel>0.035</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
       </collision>
       <collision name="gripper_cross_pin_collision">
         <pose>0.244 0 -0.112 1.5707963268 0 0</pose>
-        <geometry><cylinder><radius>0.0085</radius><length>0.124</length></cylinder></geometry>
+        <geometry><cylinder><radius>0.0065</radius><length>0.108</length></cylinder></geometry>
+        <surface>
+          <friction><ode><mu>1.3</mu><mu2>1.3</mu2><slip1>0.01</slip1><slip2>0.01</slip2></ode></friction>
+          <bounce><restitution_coefficient>0.0</restitution_coefficient><threshold>1000</threshold></bounce>
+          <contact><ode><kp>70000</kp><kd>170</kd><max_vel>0.04</max_vel><min_depth>0.001</min_depth></ode></contact>
+        </surface>
       </collision>
 
       <visual name="body_collision_debug_visual">
         <pose>0 0 0.012 0 0 0</pose>
         <geometry><box><size>0.35 0.26 0.14</size></box></geometry>
-        <material><ambient>0.00 1.00 0.25 0.12</ambient><diffuse>0.00 1.00 0.25 0.12</diffuse><specular>0.30 1.00 0.50 0.25</specular></material>
-        <transparency>0.88</transparency>
+        <material><ambient>0.00 1.00 0.25 0.0</ambient><diffuse>0.00 1.00 0.25 0.0</diffuse><specular>0.30 1.00 0.50 0.0</specular></material>
+        <transparency>1.0</transparency>
       </visual>
       <visual name="gripper_saddle_collision_debug_visual">
-        <pose>0.184 0 -0.078 0 0 0</pose>
-        <geometry><box><size>0.072 0.118 0.022</size></box></geometry>
-        <material><ambient>0.00 1.00 0.25 0.28</ambient><diffuse>0.00 1.00 0.25 0.28</diffuse><specular>0.30 1.00 0.50 0.35</specular></material>
-        <transparency>0.72</transparency>
+        <pose>0.180 0 -0.080 0 0 0</pose>
+        <geometry><box><size>0.040 0.060 0.012</size></box></geometry>
+        <material><ambient>0.00 1.00 0.25 0.0</ambient><diffuse>0.00 1.00 0.25 0.0</diffuse><specular>0.30 1.00 0.50 0.0</specular></material>
+        <transparency>1.0</transparency>
       </visual>
       <visual name="gripper_neck_collision_debug_visual">
-        <pose>0.220 0 -0.098 0 0 0</pose>
-        <geometry><box><size>0.078 0.056 0.034</size></box></geometry>
-        <material><ambient>0.00 1.00 0.25 0.28</ambient><diffuse>0.00 1.00 0.25 0.28</diffuse><specular>0.30 1.00 0.50 0.35</specular></material>
-        <transparency>0.72</transparency>
+        <pose>0.210 0 -0.098 0 0 0</pose>
+        <geometry><box><size>0.038 0.030 0.018</size></box></geometry>
+        <material><ambient>0.00 1.00 0.25 0.0</ambient><diffuse>0.00 1.00 0.25 0.0</diffuse><specular>0.30 1.00 0.50 0.0</specular></material>
+        <transparency>1.0</transparency>
       </visual>
       <visual name="gripper_left_cheek_collision_debug_visual">
-        <pose>0.238 0.052 -0.112 0 0 0</pose>
-        <geometry><box><size>0.076 0.014 0.066</size></box></geometry>
-        <material><ambient>0.00 1.00 0.25 0.34</ambient><diffuse>0.00 1.00 0.25 0.34</diffuse><specular>0.30 1.00 0.50 0.40</specular></material>
-        <transparency>0.66</transparency>
+        <pose>0.244 0.050 -0.112 0 0 0</pose>
+        <geometry><box><size>0.058 0.010 0.048</size></box></geometry>
+        <material><ambient>0.00 1.00 0.25 0.0</ambient><diffuse>0.00 1.00 0.25 0.0</diffuse><specular>0.30 1.00 0.50 0.0</specular></material>
+        <transparency>1.0</transparency>
       </visual>
       <visual name="gripper_right_cheek_collision_debug_visual">
-        <pose>0.238 -0.052 -0.112 0 0 0</pose>
-        <geometry><box><size>0.076 0.014 0.066</size></box></geometry>
-        <material><ambient>0.00 1.00 0.25 0.34</ambient><diffuse>0.00 1.00 0.25 0.34</diffuse><specular>0.30 1.00 0.50 0.40</specular></material>
-        <transparency>0.66</transparency>
+        <pose>0.244 -0.050 -0.112 0 0 0</pose>
+        <geometry><box><size>0.058 0.010 0.048</size></box></geometry>
+        <material><ambient>0.00 1.00 0.25 0.0</ambient><diffuse>0.00 1.00 0.25 0.0</diffuse><specular>0.30 1.00 0.50 0.0</specular></material>
+        <transparency>1.0</transparency>
       </visual>
       <visual name="gripper_cross_pin_collision_debug_visual">
         <pose>0.244 0 -0.112 1.5707963268 0 0</pose>
-        <geometry><cylinder><radius>0.0085</radius><length>0.124</length></cylinder></geometry>
-        <material><ambient>0.00 1.00 0.25 0.40</ambient><diffuse>0.00 1.00 0.25 0.40</diffuse><specular>0.30 1.00 0.50 0.45</specular></material>
-        <transparency>0.60</transparency>
+        <geometry><cylinder><radius>0.0065</radius><length>0.108</length></cylinder></geometry>
+        <material><ambient>0.00 1.00 0.25 0.0</ambient><diffuse>0.00 1.00 0.25 0.0</diffuse><specular>0.30 1.00 0.50 0.0</specular></material>
+        <transparency>1.0</transparency>
       </visual>
 
       <visual name="github_blue_body_visual">
@@ -96,10 +126,10 @@
       </visual>
 
       <visual name="gripper_body_saddle">
-        <pose>0.184 0 -0.078 0 0 0</pose>
+        <pose>0.180 0 -0.080 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.072 0.118 0.022</size>
+            <size>0.040 0.060 0.012</size>
           </box>
         </geometry>
         <material>
@@ -110,10 +140,10 @@
       </visual>
 
       <visual name="gripper_center_neck">
-        <pose>0.220 0 -0.098 0 0 0</pose>
+        <pose>0.210 0 -0.098 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.078 0.056 0.034</size>
+            <size>0.038 0.030 0.018</size>
           </box>
         </geometry>
         <material>
@@ -124,10 +154,10 @@
       </visual>
 
       <visual name="gripper_actuator_housing">
-        <pose>0.199 0 -0.062 0 0 0</pose>
+        <pose>0.190 0 -0.066 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.056 0.076 0.024</size>
+            <size>0.032 0.038 0.014</size>
           </box>
         </geometry>
         <material>
@@ -137,11 +167,110 @@
         </material>
       </visual>
 
-      <visual name="gripper_left_cheek_plate">
-        <pose>0.238 0.052 -0.112 0 0 0</pose>
+      <visual name="gripper_integrated_upper_bridge">
+        <pose>0.230 0 -0.076 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.076 0.014 0.066</size>
+            <size>0.062 0.052 0.010</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.008 0.010 0.012 1</ambient>
+          <diffuse>0.018 0.021 0.024 1</diffuse>
+          <specular>0.24 0.25 0.24 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_left_side_rail">
+        <pose>0.238 0.041 -0.092 0 0.18 0</pose>
+        <geometry>
+          <box>
+            <size>0.080 0.006 0.010</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.010 0.012 0.014 1</ambient>
+          <diffuse>0.024 0.027 0.030 1</diffuse>
+          <specular>0.30 0.30 0.28 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_right_side_rail">
+        <pose>0.238 -0.041 -0.092 0 0.18 0</pose>
+        <geometry>
+          <box>
+            <size>0.080 0.006 0.010</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.010 0.012 0.014 1</ambient>
+          <diffuse>0.024 0.027 0.030 1</diffuse>
+          <specular>0.30 0.30 0.28 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_center_actuator_cylinder">
+        <pose>0.228 0 -0.060 0 1.5707963268 0</pose>
+        <geometry>
+          <cylinder>
+            <radius>0.006</radius>
+            <length>0.060</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <ambient>0.08 0.09 0.09 1</ambient>
+          <diffuse>0.15 0.16 0.16 1</diffuse>
+          <specular>0.55 0.55 0.50 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_front_yoke_block">
+        <pose>0.270 0 -0.106 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.016 0.048 0.016</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.012 0.014 0.016 1</ambient>
+          <diffuse>0.026 0.029 0.032 1</diffuse>
+          <specular>0.28 0.28 0.26 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_left_pushrod">
+        <pose>0.258 0.019 -0.080 0 0.42 0.14</pose>
+        <geometry>
+          <box>
+            <size>0.042 0.004 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.12 0.12 0.12 1</ambient>
+          <diffuse>0.24 0.24 0.23 1</diffuse>
+          <specular>0.48 0.48 0.44 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_right_pushrod">
+        <pose>0.258 -0.019 -0.080 0 0.42 -0.14</pose>
+        <geometry>
+          <box>
+            <size>0.042 0.004 0.005</size>
+          </box>
+        </geometry>
+        <material>
+          <ambient>0.12 0.12 0.12 1</ambient>
+          <diffuse>0.24 0.24 0.23 1</diffuse>
+          <specular>0.48 0.48 0.44 1</specular>
+        </material>
+      </visual>
+
+      <visual name="gripper_left_cheek_plate">
+        <pose>0.244 0.050 -0.112 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.058 0.010 0.048</size>
           </box>
         </geometry>
         <material>
@@ -152,10 +281,10 @@
       </visual>
 
       <visual name="gripper_right_cheek_plate">
-        <pose>0.238 -0.052 -0.112 0 0 0</pose>
+        <pose>0.244 -0.050 -0.112 0 0 0</pose>
         <geometry>
           <box>
-            <size>0.076 0.014 0.066</size>
+            <size>0.058 0.010 0.048</size>
           </box>
         </geometry>
         <material>
@@ -166,10 +295,10 @@
       </visual>
 
       <visual name="gripper_left_lower_brace">
-        <pose>0.198 0.041 -0.098 0 0.36 0</pose>
+        <pose>0.190 0.028 -0.098 0 0.36 0</pose>
         <geometry>
           <box>
-            <size>0.090 0.010 0.012</size>
+            <size>0.052 0.006 0.008</size>
           </box>
         </geometry>
         <material>
@@ -179,10 +308,10 @@
       </visual>
 
       <visual name="gripper_right_lower_brace">
-        <pose>0.198 -0.041 -0.098 0 0.36 0</pose>
+        <pose>0.190 -0.028 -0.098 0 0.36 0</pose>
         <geometry>
           <box>
-            <size>0.090 0.010 0.012</size>
+            <size>0.052 0.006 0.008</size>
           </box>
         </geometry>
         <material>
@@ -195,8 +324,8 @@
         <pose>0.244 0 -0.112 1.5707963268 0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.0085</radius>
-            <length>0.124</length>
+            <radius>0.0065</radius>
+            <length>0.108</length>
           </cylinder>
         </geometry>
         <material>
@@ -207,11 +336,11 @@
       </visual>
 
       <visual name="gripper_left_pivot_cap">
-        <pose>0.244 0.064 -0.112 1.5707963268 0 0</pose>
+        <pose>0.244 0.056 -0.112 1.5707963268 0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.014</radius>
-            <length>0.010</length>
+            <radius>0.010</radius>
+            <length>0.008</length>
           </cylinder>
         </geometry>
         <material>
@@ -222,11 +351,11 @@
       </visual>
 
       <visual name="gripper_right_pivot_cap">
-        <pose>0.244 -0.064 -0.112 1.5707963268 0 0</pose>
+        <pose>0.244 -0.056 -0.112 1.5707963268 0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.014</radius>
-            <length>0.010</length>
+            <radius>0.010</radius>
+            <length>0.008</length>
           </cylinder>
         </geometry>
         <material>

@@ -15,7 +15,7 @@ Yang dipakai langsung di workspace:
 
 Yang tidak dipakai langsung:
 
-- `rov_gamantaray_1` Beaumont: sudah dicoba sebagai varian lokal, tetapi visualnya tidak rapi di arena KKI sehingga tidak lagi dijadikan opsi launch.
+- `rov_gamantaray_1` Beaumont: tersedia sebagai `rov_variant:=beaumont` untuk pembanding visual. Default tetap `github_blue` karena proporsi dan layout thruster lebih cocok untuk arena KKI.
 - `Robotic-Decision-Making-Lab/reach` dan dependency `alpha`: konsepnya bagus untuk Reach Alpha 5, tetapi lisensi mesh membatasi penggunaan untuk produk Reach Robotics. Karena itu aset mesh-nya tidak dicopy ke workspace ini.
 - `rock-gazebo/simulation-gazebo_underwater`: tidak dipakai sebagai plugin langsung karena targetnya Gazebo Classic lama. Konsep yang relevan tetap dipakai sebagai referensi: buoyancy, damping, center of buoyancy, dan added inertia.
 - Full stack Angler/Blue/Ricketts: tidak dimasukkan penuh karena terlalu besar untuk target latihan KKI. Workspace hanya mengambil model/mesh kecil yang relevan, sedangkan kontrol, world KKI, QR, dan gripper manager tetap kode lokal.
@@ -151,7 +151,7 @@ Yang paling masuk akal untuk lomba KKI:
 1. Tetap pakai `WS_ROV` sebagai workspace utama.
 2. Ambil konsep/model kecil, bukan clone semua repo besar.
 3. Prioritas perbaikan berikutnya:
-   - pilihan model ROV `rov_variant:=github_blue|bluerov`,
+   - pilihan model ROV `rov_variant:=github_blue|github_blue_joint|github_blue_joint_experimental|beaumont|bluerov`,
    - gripper visual custom terintegrasi, dengan asset Ricketts hanya sebagai referensi lokal,
    - motion model kinematic dengan lag/damping agar terasa di air,
    - mode hydro yang memakai parameter dari BlueROV2/Gazebo official kalau sudah ada data massa dan buoyancy ROV.

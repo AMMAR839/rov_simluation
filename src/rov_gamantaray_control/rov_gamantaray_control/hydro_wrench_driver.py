@@ -11,6 +11,8 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 
+from rov_gamantaray_control.pwm_model import pwm_to_thrust
+
 
 def yaw_from_quaternion(x: float, y: float, z: float, w: float) -> float:
     siny_cosp = 2.0 * (w * z + x * y)
@@ -35,7 +37,7 @@ def clamp(value: float, lower: float, upper: float) -> float:
 
 
 class HydroWrenchDriver(Node):
-    """Apply allocator thruster output as a persistent Gazebo wrench."""
+    """Apply PWM-derived thruster output as a persistent Gazebo wrench."""
 
     def __init__(self) -> None:
         super().__init__("hydro_wrench_driver")
@@ -49,6 +51,10 @@ class HydroWrenchDriver(Node):
         self.declare_parameter("max_horizontal_thrust_n", 22.0)
         self.declare_parameter("max_vertical_thrust_n", 18.0)
         self.declare_parameter("thruster_yaw_scale", 0.75)
+        self.declare_parameter("pwm_neutral_us", 1500.0)
+        self.declare_parameter("pwm_min_us", 1100.0)
+        self.declare_parameter("pwm_max_us", 1900.0)
+        self.declare_parameter("pwm_deadband_us", 25.0)
         self.declare_parameter("max_xy_speed_mps", 0.42)
         self.declare_parameter("max_z_speed_mps", 0.22)
         self.declare_parameter("max_yaw_rate_rps", 0.45)
@@ -72,6 +78,10 @@ class HydroWrenchDriver(Node):
         self.max_horizontal = float(self.get_parameter("max_horizontal_thrust_n").value)
         self.max_vertical = float(self.get_parameter("max_vertical_thrust_n").value)
         self.thruster_yaw_scale = float(self.get_parameter("thruster_yaw_scale").value)
+        self.pwm_neutral = float(self.get_parameter("pwm_neutral_us").value)
+        self.pwm_min = float(self.get_parameter("pwm_min_us").value)
+        self.pwm_max = float(self.get_parameter("pwm_max_us").value)
+        self.pwm_deadband = float(self.get_parameter("pwm_deadband_us").value)
         self.max_xy_speed = float(self.get_parameter("max_xy_speed_mps").value)
         self.max_z_speed = float(self.get_parameter("max_z_speed_mps").value)
         self.max_yaw_rate = float(self.get_parameter("max_yaw_rate_rps").value)
@@ -85,6 +95,8 @@ class HydroWrenchDriver(Node):
         self.surface_limit_z = float(self.get_parameter("surface_limit_z").value)
 
         self.last_thrusters = [0.0] * 6
+        self.last_pwm = [self.pwm_neutral] * 6
+        self.last_pwm_time = 0.0
         self.yaw = 0.0
         self.body_vx = 0.0
         self.body_vy = 0.0
@@ -100,6 +112,7 @@ class HydroWrenchDriver(Node):
         )
         self.clear_pub = self.gz_node.advertise(f"/world/{self.world_name}/wrench/clear", Entity)
 
+        self.create_subscription(Float64MultiArray, "/rov/thruster_pwm", self.pwm_callback, 10)
         self.create_subscription(
             Float64MultiArray, "/rov/thruster_status", self.thruster_callback, 10
         )
@@ -117,8 +130,27 @@ class HydroWrenchDriver(Node):
         return Entity.MODEL
 
     def thruster_callback(self, msg: Float64MultiArray) -> None:
+        if time.monotonic() - self.last_pwm_time < 0.2:
+            return
         if len(msg.data) >= 6:
             self.last_thrusters = [float(v) for v in msg.data[:6]]
+
+    def pwm_callback(self, msg: Float64MultiArray) -> None:
+        if len(msg.data) < 6:
+            return
+        self.last_pwm = [float(v) for v in msg.data[:6]]
+        self.last_pwm_time = time.monotonic()
+        self.last_thrusters = [
+            pwm_to_thrust(
+                value,
+                self.max_horizontal if index < 4 else self.max_vertical,
+                self.pwm_neutral,
+                self.pwm_min,
+                self.pwm_max,
+                self.pwm_deadband,
+            )
+            for index, value in enumerate(self.last_pwm)
+        ]
 
     def odom_callback(self, msg: Odometry) -> None:
         p = msg.pose.pose.position

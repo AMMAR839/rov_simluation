@@ -99,8 +99,17 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true payload_
 Pilih model ROV:
 
 ```bash
-# default: GitHub BlueROV2-style + gripper claw custom terintegrasi
+# default: GitHub BlueROV2-style + gripper claw custom compact
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue
+
+# varian stabil: gripper compact menyatu, aman untuk latihan misi
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue_joint
+
+# varian eksperimen: gripper menjadi link + revolute joint Gazebo
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue_joint_experimental
+
+# alternatif dari referensi lama: Beaumont
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=beaumont
 
 # alternatif lama dari folder lokal, tetap tersedia untuk pembanding visual
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=bluerov
@@ -214,12 +223,13 @@ Referensi yang dipakai untuk keputusan air:
 
 Model utama yang dikendalikan Gazebo tetap bernama `gamantaray_rov`, tetapi URI modelnya bisa dipilih lewat `rov_variant`.
 
-- `rov_variant:=github_blue`: default baru. Body ROV dan T200 propeller diambil dari GitHub `evan-palmer/blue` karena lisensinya MIT dan layout thruster-nya jelas. Mesh body diskalakan agar body + thruster berada dalam batas 35 x 35 x 35 cm dari PDF; gripper boleh berada di luar dimensi ROV sesuai PDF. Gripper bawah-depan dibuat ulang sebagai assembly SDF custom: saddle ke rangka, housing aktuator, cheek plate, pin pivot, dan dua rahang claw animasi. Jadi gripper tidak lagi terlihat seperti mesh mentah yang ditempel di depan ROV.
+- `rov_variant:=github_blue`: default baru. Body ROV dan T200 propeller diambil dari GitHub `evan-palmer/blue` karena lisensinya MIT dan layout thruster-nya jelas. Mesh body diskalakan agar body + thruster berada dalam batas 35 x 35 x 35 cm dari PDF; gripper boleh berada di luar dimensi ROV sesuai PDF. Gripper bawah-depan dibuat ulang sebagai assembly SDF custom compact: saddle ke rangka, housing aktuator kecil, cheek plate, pin pivot, dan dua rahang claw animasi. Jadi gripper tidak lagi terlihat seperti mesh mentah yang ditempel di depan ROV.
+- `rov_variant:=github_blue_joint`: varian stabil untuk command latihan. Model ROV tetap memakai assembly compact `gamantaray_rov_github_blue_gripper`, rahang tetap digerakkan kinematic oleh `gripper_manager`, dan tampilan gripper dibuat menyatu dengan body supaya tidak lepas saat ROV digerakkan oleh driver kinematic/PWM.
+- `rov_variant:=github_blue_joint_experimental`: varian eksperimen yang memakai model `gamantaray_rov_github_blue_joint_gripper`. Rahang kiri/kanan menjadi `link` di dalam satu model ROV, bergerak lewat `revolute joint` dan `gz-sim-joint-position-controller-system`. Pada varian ini, kontak rahang-payload dapat dihitung oleh contact solver Gazebo, tetapi tidak direkomendasikan untuk latihan misi karena body ROV masih digerakkan kinematic sehingga joint dinamis bisa jitter atau terlihat offset di GUI.
+- `rov_variant:=beaumont`: alternatif dari `rov_gamantaray_1`. Ini disediakan supaya model Beaumont bisa dibandingkan langsung di arena KKI. Gripper Beaumont masih memakai rahang visual terpisah seperti mode kinematic.
 - `rov_variant:=bluerov`: alternatif lama dari `rov_gamantaray_2`. Ini tetap ada untuk pembanding, tetapi bukan default karena gripper aslinya tidak sepaket dengan mesh tersebut.
 
-Varian Beaumont dari `rov_gamantaray_1` tidak lagi dibuat sebagai opsi launch karena bentuknya tidak rapi saat dipakai di arena ini. Folder referensi lokal tetap berguna untuk memahami ide claw, tetapi model yang dipakai sekarang berasal dari GitHub yang lisensinya jelas.
-
-Model ROV dibuat static agar bisa digerakkan langsung oleh ROS melalui service Gazebo `set_pose`. Payload A/B/C/D dibuat non-static/dinamis, sehingga punya massa, collision, dan bisa bergeser saat tersentuh. Karena ROV dan capit default masih digerakkan kinematic, `gripper_manager` menambahkan respons kontak kecil: saat body ROV atau capit masuk zona collision payload sambil bergerak ke arah payload, pose payload digeser di lantai kolam. Ini membuat arti collide terlihat di simulasi tanpa membuat ROV jitter atau tembus lantai.
+Model ROV dibuat static agar bisa digerakkan langsung oleh ROS melalui service Gazebo `set_pose`. Payload A/B/C/D dibuat non-static/dinamis, sehingga punya massa, collision, dan bisa bergeser saat tersentuh. Karena ROV dan capit default masih digerakkan kinematic, `gripper_manager` menambahkan respons kontak kecil: saat body ROV atau capit masuk zona collision payload sambil bergerak ke arah payload, pose payload digeser di lantai kolam. `kinematic_driver` juga menahan pose ROV agar tidak diset menembus pipa/peg hook. Ini membuat arti collide terlihat di simulasi tanpa membuat ROV jitter atau tembus lantai.
 
 Model berisi:
 
@@ -231,7 +241,7 @@ Model berisi:
 - IMU,
 - gripper visual terintegrasi di bawah-depan body.
 
-Di mode kinematic, propeller dibuat sebagai enam model visual terpisah: `gamantaray_rov_thruster1_prop_visual` sampai `gamantaray_rov_thruster6_prop_visual`. Pada `rov_variant:=github_blue`, posisi dan orientasi propeller mengikuti `blue_description/description/bluerov2/urdf.xacro` dari GitHub `evan-palmer/blue`, sehingga pusat propeller berada di duct/ring model BlueROV2. Node `kinematic_driver` menghitung pose setiap propeller dari pose ROV, offset thruster, orientasi referensi, dan spin angle berdasarkan nilai `/rov/thruster_status`. Jadi propeller yang terlihat berputar adalah indikator visual command thruster, bukan sumber gaya fisika.
+Di mode kinematic, propeller dibuat sebagai enam model visual terpisah: `gamantaray_rov_thruster1_prop_visual` sampai `gamantaray_rov_thruster6_prop_visual`. Pada `rov_variant:=github_blue`, posisi dan orientasi propeller mengikuti `blue_description/description/bluerov2/urdf.xacro` dari GitHub `evan-palmer/blue`, sehingga pusat propeller berada di duct/ring model BlueROV2. Node `kinematic_driver` menghitung pose setiap propeller dari pose ROV, offset thruster, orientasi referensi, dan spin angle berdasarkan PWM dari `/rov/thruster_pwm` yang sudah dikonversi menjadi estimasi thrust. Jadi ROV tidak bergerak langsung dari `cmd_vel`; alurnya lewat PWM thruster dulu.
 
 Default ROV dimulai di `z=-0.28`, bukan dekat lantai kolam. Pada mode kinematic batas bawahnya dikunci di `bottom_limit_z=-0.72`, sedangkan lantai kolam berada di sekitar `z=-0.85`. Jadi operator bisa menyentuh area dasar untuk mengambil payload, tetapi pusat ROV tetap dibatasi agar visual tidak menembus lantai.
 
@@ -257,7 +267,7 @@ Karena command selalu dihitung dari posisi axis terbaru, stick yang kembali teng
 
 ### 4. Allocator thruster
 
-Node `cmd_vel_mux` memilih `/rov/manual_cmd_vel` atau `/rov/auto_cmd_vel`, lalu meneruskan hasilnya ke `/rov/cmd_vel`. Node `thruster_allocator` mengubah `/rov/cmd_vel` menjadi 6 nilai thruster.
+Node `cmd_vel_mux` memilih `/rov/manual_cmd_vel` atau `/rov/auto_cmd_vel`, lalu meneruskan hasilnya ke `/rov/cmd_vel`. Node `thruster_allocator` mengubah `/rov/cmd_vel` menjadi 6 command thruster normalized, lalu menjadi PWM ESC.
 
 Rumus thruster horizontal:
 
@@ -275,23 +285,31 @@ t5 = heave
 t6 = heave
 ```
 
-Semua command di-clamp ke batas thrust. Jika tidak ada command baru selama `0.5 s`, watchdog otomatis mengirim nol ke semua thruster.
+Semua command di-clamp ke `-1..1`, lalu dikonversi ke PWM default `1100..1900 us` dengan netral `1500 us`. Deadband default `25 us`. Estimasi thrust dihitung dari PWM dengan kurva kuadratik sederhana:
+
+```text
+thrust_n = max_thrust_n * normalized_pwm * abs(normalized_pwm)
+```
+
+Jika tidak ada command baru selama `0.5 s`, watchdog otomatis mengirim PWM netral ke semua thruster.
 
 ### 5. Driver kinematic
 
-Node `kinematic_driver` membaca `/rov/thruster_status`, mengubahnya kembali menjadi surge, sway, heave, dan yaw, lalu mengintegrasikan posisi ROV setiap 0.05 s.
+Node `kinematic_driver` membaca `/rov/thruster_pwm`, mengubah PWM menjadi estimasi thrust, lalu menghitung surge, sway, heave, dan yaw untuk mengintegrasikan posisi ROV setiap 0.05 s.
 
 Urutan logika:
 
-1. Hitung command body-frame dari output thruster.
-2. Masukkan command ke model respons lambat:
+1. Baca PWM ESC dari `/rov/thruster_pwm`.
+2. Konversi PWM ke estimasi thrust.
+3. Hitung command body-frame dari output thruster.
+4. Masukkan command ke model respons lambat:
    `v = v + (target_v - v) * (1 - exp(-dt/tau))`.
-3. Tambahkan roll/pitch visual kecil sesuai surge/sway agar ROV tidak terlihat terlalu kaku.
-4. Ubah body velocity ke world-frame memakai yaw ROV.
-5. Integrasikan `x`, `y`, `z`, dan yaw.
-6. Batasi posisi agar tetap di dalam kolam.
-7. Publish odometry ke `/model/gamantaray_rov/odometry`.
-8. Kirim pose ke Gazebo lewat `/world/kki_rov_pool/set_pose`.
+5. Tambahkan roll/pitch visual kecil sesuai surge/sway agar ROV tidak terlihat terlalu kaku.
+6. Ubah body velocity ke world-frame memakai yaw ROV.
+7. Integrasikan `x`, `y`, `z`, dan yaw.
+8. Batasi posisi agar tetap di dalam kolam.
+9. Publish odometry ke `/model/gamantaray_rov/odometry`.
+10. Kirim pose ke Gazebo lewat `/world/kki_rov_pool/set_pose`.
 
 Ini bukan fisika hidrodinamika penuh, tetapi sekarang geraknya diberi lag/damping agar lebih terasa seperti ROV di air. Parameter yang bisa dituning: `linear_response_s`, `vertical_response_s`, `yaw_response_s`, `attitude_response_s`, dan `max_visual_tilt_rad`.
 
@@ -320,16 +338,19 @@ Node `gripper_manager` menerima `/rov/gripper_cmd`:
 - `0.0`: buka,
 - `1.0`: tutup.
 
-Rahang gripper dianimasikan oleh `gripper_manager` sebagai dua model visual terpisah: `gamantaray_rov_left_gripper_jaw` dan `gamantaray_rov_right_gripper_jaw`. Pivot rahang ditempatkan di pin gripper bawah-depan ROV, dengan bukaan default lebih rapat supaya claw terlihat seperti mekanik penjepit, bukan tangan lepas dari body. Nilai `/rov/gripper_cmd` tidak lagi langsung mengambil payload. Payload baru dianggap terjepit jika semua syarat ini terpenuhi:
+Pada default `rov_variant:=github_blue` dan varian stabil `rov_variant:=github_blue_joint`, rahang gripper dianimasikan oleh `gripper_manager` sebagai dua model visual terpisah: `gamantaray_rov_left_gripper_jaw` dan `gamantaray_rov_right_gripper_jaw`. Pada varian eksperimen `rov_variant:=github_blue_joint_experimental`, rahang menjadi link fisika di dalam model ROV dan command gripper dipublish ke joint controller Gazebo. Pivot rahang ditempatkan di pin gripper bawah-depan ROV. Versi sekarang memakai desain compact: mount lebih sempit, housing/kotak gripper lebih kecil, cheek plate di sekitar `±0.050 m`, pin lebih pendek, finger lebih ramping, dan bukaan default sekitar `0.125 m`. Tujuannya agar capit proporsional dengan body BlueROV, tetap cukup lebar untuk menerima payload 5 cm, tetapi tidak terlihat seperti lengan besar yang menempel di bawah ROV.
 
-- gripper sedang menutup dan sudah hampir mencapai posisi tertutup,
+Default kontak gripper sekarang memakai `payload_contact_model:=strict`. Pada mode ini tidak ada funnel otomatis dan tidak ada attach hanya karena payload dekat. Payload baru dianggap terjepit jika semua syarat ini terpenuhi:
+
+- gripper sedang menutup sampai gap rahang mendekati lebar payload,
+- inner pad rahang kiri dan kanan sama-sama menekan payload (`pinched=true`),
 - pusat payload berada di depan gripper, bukan sekadar dekat dengan ROV,
 - error depan-belakang, kiri-kanan, dan tinggi masih dalam toleransi capture,
-- bukaan rahang sudah cukup kecil untuk menjepit payload.
+- kontak dua sisi bertahan sebentar, default `grip_min_bilateral_contact_s:=0.20`, sehingga payload tidak attached dari satu frame yang kebetulan overlap.
 
-Payload A/B/C/D punya bentuk sesuai PDF: plate vertikal 5 cm x 10 cm, QR 4 cm x 4 cm di sisi depan, base 3 cm, dan lubang gantung 3 cm di atas QR. Collision plate dipecah menjadi beberapa bagian supaya area lubang benar-benar kosong untuk pasak hook. Payload dibuat `static=false` supaya bisa bergeser di lantai kolam. Rahang gripper juga punya collision pada pivot hub, finger, hook tip, dan rear bridge. Pada mode default kinematic, `gripper_manager` membaca pose payload dari `/world/kki_rov_pool/pose/info`, lalu memberi respons dorong saat ROV/capit menyentuh payload dan sedang bergerak ke arah payload. Jadi kalau `kki_payload_A` ditabrak dari depan/samping oleh ROV atau capit, payload akan bergeser, bukan hanya diam sebagai visual.
+Payload A/B/C/D punya bentuk sesuai PDF: plate vertikal 5 cm x 10 cm, QR 4 cm x 4 cm di sisi depan, base 3 cm, dan lubang gantung di atas QR. Collision plate dipecah menjadi beberapa bagian supaya area lubang benar-benar kosong untuk pasak hook. Bukaan lubang di simulasi dibuat sedikit lebih besar, sekitar 3.4 cm, agar peg hook diameter 2 cm punya clearance visual dan collision. Visual hitam penutup lubang sudah dihapus, jadi bagian itu benar-benar kosong, bukan hanya lingkaran hitam. Payload dibuat `static=false` supaya bisa bergeser di lantai kolam. Rahang gripper juga punya collision pada pivot hub, finger, inner pad, hook tip, dan rear link. Pada mode default kinematic, `gripper_manager` membaca pose payload dari `/world/kki_rov_pool/pose/info`, lalu memberi respons kontak berbasis overlap geometri. Jika payload terkena body, frame gripper, front tip, left pad, atau right pad, payload hanya digeser ke arah resolusi tabrakan tersebut. Kontak pad dihitung dari posisi box `inner_pad_collision` aktual yang ikut rotasi rahang visual efektif, bukan dari gap global rahang. Jika kedua pad menekan bersamaan, status menjadi `contact=bilateral_clamp` dan `pinched=true`, tetapi payload tidak di-snap ke tengah. Visual rahang juga dibatasi oleh `jaw_visual_stop_clearance_m` dan binary-search overlap pad, sehingga capit kinematic tidak terus digambar menembus payload saat command tutup tetap ditekan. Koreksi kontak dibatasi oleh `payload_contact_max_step_m` default `0.016 m` dan arahnya selalu keluar dari bagian capit yang benar-benar overlap. Itulah satu-satunya kondisi yang boleh berubah menjadi `attached`.
 
-Saat payload sedang attached, model `held_payload_collision_proxy` ikut dipindahkan ke posisi payload. Proxy ini punya collision dan visual hijau transparan supaya collision benda yang sedang diangkat terlihat jelas di Gazebo.
+Saat payload sedang attached, payload tidak lagi ditempel kaku secara instan. Node memakai constraint lunak yang cukup rapat: pose payload mengikuti titik tengah rahang dengan response default `held_payload_response_s:=0.06` dan batas sway `held_payload_max_sway_m:=0.020`. Field `grip_stress` di status menunjukkan seberapa besar payload tertarik dari titik jepit. Model `held_payload_collision_proxy` ikut dipindahkan ke posisi payload. Proxy ini punya collision dan visual hijau transparan supaya collision benda yang sedang diangkat terlihat jelas di Gazebo.
 
 Collision ROV dan capit berada di file berikut:
 
@@ -343,15 +364,17 @@ Collision ROV dan capit berada di file berikut:
 - Capit kiri/kanan: `src/rov_gamantaray_description/models/gamantaray_gripper_ricketts_left_jaw_visual/model.sdf` dan `gamantaray_gripper_ricketts_right_jaw_visual/model.sdf`
   - `pivot_hub_collision`
   - `outer_finger_collision`
-  - `inner_finger_collision`
+  - `inner_pad_collision`
   - `front_hook_tip_collision`
-  - `rear_bridge_collision`
+  - `rear_link_collision`
 
-Untuk memudahkan pengecekan di Gazebo, collision ROV dan capit juga diberi visual debug hijau transparan dengan nama `*_collision_debug_visual`. Ini bukan pengganti collision fisika; ini hanya overlay agar bentuk collision langsung terlihat di GUI.
+Collision ROV dan capit tetap ada di SDF, tetapi visual debug hijau untuk collision disembunyikan pada model default agar tampilan ROV lebih bersih. Jika ingin mengecek collision, aktifkan tampilan collision dari menu Gazebo, bukan dari visual dekoratif model.
 
 Pada mode default `physics_mode:=kinematic`, pengambilan payload tetap memakai logika alignment dari `gripper_manager`, bukan gaya kontak murni, supaya simulasi stabil dan tidak bergantung pada solver kontak kecil yang mudah jitter. Collision untuk dorong/geser tetap aktif melalui respons kontak kinematic di node yang sama.
 
-Selama attached, pose payload dipindahkan ke tengah rahang gripper melalui service Gazebo `set_pose`. Saat gripper dibuka di dekat hook yang sesuai QR, payload masuk mode `hung`: lubang payload dikunci sebagai titik gantung pada pasak hook A/B/C/D, lalu body payload mengikuti model ayunan teredam seperti bandul pendek. Jika dibuka jauh dari hook, payload dilepas di posisi terakhir. Status alignment, tabrakan, dan hook gantung bisa dilihat lewat:
+Selama attached, pose payload dikendalikan seperti constraint gripper lunak melalui service Gazebo `set_pose`. Payload tidak boleh ditarik lebih rendah dari `payload_floor_z`; jika gripper terlalu rendah, attach ditolak supaya payload tidak tenggelam ke lantai saat pertama kali tercapit. Hook A/B/C/D dibuat seperti gantungan PVC di dinding kolam: clamp di bibir kolam, pipa vertikal, elbow bawah, dan peg horizontal terbuka tanpa ujung lancip atau stopper. Semua bagian utama punya collision SDF, sehingga peg, pipa, dan backing bukan sekadar visual. Pada mode kinematic, collision SDF dilengkapi `hook_collision_guard` di driver ROV dan guard kecil di payload supaya objek yang dikendalikan `set_pose` tidak bebas menembus hook.
+
+Saat gripper dibuka, payload baru masuk mode `hung` jika lubang payload benar-benar masuk ke sumbu pasak hook dan kedalaman sepanjang pasak masih valid. QR menentukan target misi, tetapi fisika gantung tetap boleh terjadi di hook fisik yang sedang dimasuki walaupun QR belum terbaca. Jarak/yaw ROV tetap dilaporkan di `hook_err`, tetapi tidak lagi menjadi syarat utama release, karena yang menentukan secara fisik adalah lubang payload terhadap peg. Toleransi presisi default: `hook_snap_hole_tolerance_m:=0.024` dan `hook_snap_axial_tolerance_m:=0.026`. Saat payload masih dibawa gripper, guard peg memakai jendela masuk `hook_peg_pass_window_m:=0.028` supaya pipa tidak bebas menembus bagian solid payload. Lubang payload harus pernah berada di luar ujung bebas pipa lalu masuk ke dalam sepanjang sumbu pipa (`hook_entry_tip_min_t:=0.78`); jika payload ditabrakkan dari kanan/kiri langsung ke tengah pipa atau area dekat ujung, status menjadi `side_entry_blocked` dan payload didorong keluar secara lateral, bukan sepanjang batang. Setelah entry valid, tarikan kiri/kanan dikunci sebagai kontak lubang-pipa: posisi lubang diproyeksikan balik ke sumbu peg, sehingga payload tidak bisa keluar dari samping selama memori entry masih aktif. Visual side plate lubang payload juga ditebalkan sehingga bukaan terlihat sekitar 3 cm dan tidak tampak seperti celah samping terbuka. Jika lubang sudah sempat masuk dari ujung pipa lalu operator bergeser sedikit, `hook_latch_memory_s:=3.00` menyimpan titik latch sementara; release masih bisa berhasil sebagai `ready_latched` sampai `hook_latch_release_tolerance_m:=0.036` dan axial tolerance `0.075`. Jika dibuka jauh dari hook atau lubangnya belum masuk area pasak, payload masuk state `dropping`: node memberi kecepatan awal dari gerak ROV, gaya berat efektif yang dikurangi buoyancy, drag linear/kuadratik air, batas terminal speed, dan tilt kecil selama tenggelam. Jadi payload tidak langsung snap ke hook atau dasar. Status alignment, tabrakan, drop, dan hook gantung bisa dilihat lewat:
 
 ```bash
 ros2 topic echo /rov/gripper_status
@@ -360,7 +383,7 @@ ros2 topic echo /rov/gripper_status
 Parameter gantung yang bisa dituning dari launch:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true hanging_damping:=2.8 hanging_release_velocity_gain:=0.35 hanging_max_angle_rad:=0.35
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true hanging_damping:=2.8 hanging_release_velocity_gain:=0.35 hanging_max_angle_rad:=0.35 hook_snap_hole_tolerance_m:=0.024 hook_snap_axial_tolerance_m:=0.026 hook_peg_pass_window_m:=0.028 hook_latch_release_tolerance_m:=0.036 hook_latch_memory_s:=3.00 held_payload_response_s:=0.06 held_payload_max_sway_m:=0.020
 ```
 
 ### 7. Deteksi QR
@@ -397,6 +420,8 @@ Lihat hasil huruf QR:
 ros2 topic echo /rov/qr_code
 ```
 
+Catatan penting untuk autonomous: `payload_code:=C` pada launch hanya memilih payload yang dispawn di world untuk skenario uji. ROV tidak memakai argumen itu sebagai pengetahuan target saat mode lomba. Target hook baru dianggap valid setelah node QR mempublish huruf A/B/C/D ke `/rov/qr_code`.
+
 Kalau `rqt_image_view` belum ada:
 
 ```bash
@@ -408,8 +433,10 @@ Alurnya:
 1. Konversi ROS image ke OpenCV image dengan `cv_bridge`.
 2. Jalankan `detectAndDecodeMulti`.
 3. Jika gagal, coba `detectAndDecode` single QR.
-4. Publish hasil huruf QR ke `/rov/qr_code`.
-5. Publish debug image ke `/rov/qr_debug/image` jika QR terdeteksi.
+4. Filter hasil agar hanya payload A/B/C/D yang dianggap valid.
+5. Jika lebih dari satu QR terlihat, pilih QR dengan skor terbaik dari area terbesar dan posisi paling dekat tengah kamera.
+6. Publish hasil huruf QR ke `/rov/qr_code`.
+7. Publish debug image ke `/rov/qr_debug/image` jika QR terdeteksi.
 
 ### 8. Mission supervisor
 
@@ -421,15 +448,23 @@ scan_payload -> pick_payload -> go_to_hook -> release_payload -> surface
 
 Ada tiga profil:
 
-- `mission_profile:=full`: scan QR, ambil payload, bawa ke hook, lepas, lalu naik.
-- `mission_profile:=carry_release_surface`: ROV diasumsikan sudah membawa payload, lalu autonomous menuju hook, melepas payload, dan naik ke permukaan.
-- `mission_profile:=release_surface`: ROV diasumsikan sudah dekat hook, lalu autonomous membuka gripper, memastikan payload masuk mode `hung`, dan naik ke permukaan. Ini profil paling langsung untuk misi nomor 5.
+- `mission_profile:=full`: mode eksperimen end-to-end untuk scan QR, ambil payload, bawa ke hook, lepas, lalu naik.
+- `mission_profile:=release_surface`: profil utama untuk misi nomor 5. Operator manual sudah scan QR, mengambil payload, dan membawa ROV ke dekat hook. Autonomous hanya membuka gripper, memastikan payload benar-benar `hung`, lalu membawa ROV ke permukaan.
+- `mission_profile:=carry_release_surface`: mode eksperimen latihan. ROV diasumsikan sudah membawa payload, lalu autonomous menuju hook, melepas payload, dan naik. Ini bukan alur utama misi nomor 5 jika aturan mengharuskan hanya pelepasan payload yang dinilai autonomous.
 
 Kontrol geraknya memakai proportional controller:
 
 ```text
 cmd = gain * error_posisi
 ```
+
+Autonomous menuju hook tidak lagi langsung menarik ROV ke koordinat hook. Jalurnya dibuat bertahap:
+
+```text
+rise_to_transit -> go_to_standoff -> approach_hook -> release_payload -> surface
+```
+
+Pada setiap tahap, target posisi diubah ke body-frame ROV dan yaw ROV diarahkan menghadap dinding hook. Tahap `approach_hook` memakai speed lebih kecil supaya payload tidak datang terlalu cepat ke gantungan.
 
 Target hook:
 
@@ -444,37 +479,51 @@ Aktifkan dengan:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true use_vision:=true
 ```
 
-Untuk misi nomor 5 saja:
+Untuk misi nomor 5 yang sesuai alur PDF, jalankan manual dulu tetapi siapkan autonomous release:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=release_surface payload_code:=C joystick:=false
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=release_surface payload_code:=C command_source:=manual require_qr_for_target:=true use_vision:=true
 ```
 
-Untuk skenario lomba yang lebih mirip aslinya, jalankan manual dulu tetapi siapkan autonomous nomor 5:
+Alurnya:
 
-```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=release_surface payload_code:=C command_source:=manual
-```
-
-Setelah ROV membawa payload dekat hook C, pindahkan kontrol ke autonomous:
+1. Operator menggerakkan ROV manual.
+2. Arahkan kamera depan ke QR sampai `/rov/qr_code` terbaca.
+3. Ambil payload secara manual dengan gripper.
+4. Bawa payload ke hook yang sesuai QR secara manual.
+5. Pastikan `/rov/gripper_status` menunjukkan `hook_aligned=true` atau `release_block=ready`.
+6. Pindahkan sumber command ke autonomous:
 
 ```bash
 ros2 topic pub --once /rov/command_source std_msgs/msg/String "{data: auto}"
 ```
 
-Jika payload masih sedang dibawa ROV dan belum sampai hook:
+Setelah itu autonomous membuka gripper hanya kalau `hook_aligned=true`. Jika payload masuk `hung`, ROV naik ke permukaan. Jika belum `hung`, ROV tidak langsung naik karena default `release_surface_on_timeout:=false`. Jika `auto` diaktifkan terlalu cepat, gripper tetap ditahan tertutup sampai alignment hook valid.
+
+Jika menjalankan mode potongan misi dari tengah dan kamera belum sempat membaca QR, publish hasil QR sekali dari terminal lain untuk debug:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C joystick:=false
+ros2 topic pub --once /rov/qr_code std_msgs/msg/String "{data: C}"
 ```
 
-Jika ingin otomatis aktif tepat setelah payload berhasil dijepit:
+Untuk cek alasan payload belum bisa digantung:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C command_source:=manual auto_start_on_attached:=true use_vision:=true
+ros2 topic echo /rov/gripper_status
 ```
 
-Pada mode ini, operator hanya perlu scan dan ambil payload. Begitu `/rov/gripper_status` menjadi `attached`, sistem pindah ke `auto`, membawa ROV ke hook sesuai `payload_code`, melepas payload, lalu naik ke permukaan.
+Perhatikan field:
+
+- `hook_aligned=true`: lubang payload sudah cukup sejajar dengan pasak.
+- `hook_err=(radial,axial,rov,yaw)`: error lubang ke sumbu pasak, error kedalaman sepanjang pasak, jarak ROV ke pose referensi, dan error yaw. Release fisik hanya diblokir oleh radial/axial, sedangkan `rov/yaw` dipakai sebagai panduan operator.
+- `grip_stress=0..1`: seberapa besar payload tertarik dari titik jepit selama dibawa.
+- `release_block=...`: alasan release belum dianggap valid, misalnya `hole_not_on_peg`, `peg_depth_bad`, atau `unknown_qr`.
+
+Mode eksperimen jika ingin ROV autonomous bergerak dari posisi membawa payload menuju hook:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C require_qr_for_target:=true joystick:=false
+```
 
 ## Topic Penting
 
@@ -483,7 +532,9 @@ Pada mode ini, operator hanya perlu scan dan ambil payload. Begitu `/rov/gripper
 - `/rov/command_source`: pilih `manual` atau `auto`.
 - `/rov/active_command_source`: sumber command yang sedang aktif.
 - `/rov/cmd_vel`: hasil mux yang masuk ke allocator.
-- `/rov/thruster_status`: output allocator untuk driver kinematic.
+- `/rov/thruster_pwm`: PWM ESC 6 thruster, default netral `1500 us`.
+- `/rov/thruster_status`: estimasi thrust Newton dari PWM.
+- `/rov/thruster1/pwm` sampai `/rov/thruster6/pwm`: PWM tiap thruster.
 - `/rov/thruster1/cmd` sampai `/rov/thruster6/cmd`: command thruster Gazebo.
 - `/rov/gripper_cmd`: command buka/tutup gripper.
 - `/rov/gripper_status`: status payload.
@@ -520,7 +571,7 @@ Untuk mengubah model ROV:
 - propeller T200 GitHub ada di `gamantaray_blue_t200_prop_cw_visual` dan `gamantaray_blue_t200_prop_ccw_visual`,
 - rahang gripper animasi ada di `gamantaray_gripper_ricketts_left_jaw_visual` dan `gamantaray_gripper_ricketts_right_jaw_visual`; nama folder masih membawa nama referensi lama, tetapi geometri aktifnya sudah dibuat ulang sebagai claw SDF custom,
 - BlueROV2 lokal lama ada di `src/rov_gamantaray_description/models/gamantaray_rov`,
-- pilih model saat launch dengan `rov_variant:=github_blue` atau `rov_variant:=bluerov`.
+- pilih model saat launch dengan `rov_variant:=github_blue`, `rov_variant:=github_blue_joint`, `rov_variant:=github_blue_joint_experimental`, `rov_variant:=beaumont`, atau `rov_variant:=bluerov`.
 - panduan membuat model sendiri ada di `docs/custom_rov_modeling_guide.md`.
 
 Untuk mengembangkan autonomous:

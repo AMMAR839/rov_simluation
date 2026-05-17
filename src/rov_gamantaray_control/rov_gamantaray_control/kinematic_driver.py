@@ -10,6 +10,8 @@ from nav_msgs.msg import Odometry
 from rclpy.node import Node
 from std_msgs.msg import Float64MultiArray
 
+from rov_gamantaray_control.pwm_model import pwm_to_thrust
+
 
 def quaternion_from_yaw(yaw: float):
     half = yaw * 0.5
@@ -49,8 +51,34 @@ def approach(current: float, target: float, dt: float, time_constant: float) -> 
     return current + (target - current) * alpha
 
 
+def clamp(value: float, lower: float, upper: float) -> float:
+    return max(lower, min(upper, value))
+
+
+def parameter_as_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
+HOOK_VERTICAL_GUARDS = (
+    (-4.86, 0.0, -0.455, -0.005, 0.018),
+    (4.86, 0.0, -0.455, -0.005, 0.018),
+    (0.0, 4.86, -0.455, -0.005, 0.018),
+    (0.0, -4.86, -0.455, -0.005, 0.018),
+)
+
+HOOK_PEG_GUARDS = (
+    ((-4.86, 0.0), (-4.60, 0.0), -0.43, 0.010),
+    ((4.86, 0.0), (4.60, 0.0), -0.43, 0.010),
+    ((0.0, 4.86), (0.0, 4.60), -0.43, 0.010),
+    ((0.0, -4.86), (0.0, -4.60), -0.43, 0.010),
+)
+
 class KinematicDriver(Node):
-    """Move the static Gazebo ROV from the allocator's thruster output."""
+    """Move the static Gazebo ROV from PWM-derived thruster output."""
 
     def __init__(self) -> None:
         super().__init__("kinematic_driver")
@@ -59,6 +87,10 @@ class KinematicDriver(Node):
         self.declare_parameter("max_horizontal_thrust_n", 22.0)
         self.declare_parameter("max_vertical_thrust_n", 18.0)
         self.declare_parameter("yaw_scale", 0.75)
+        self.declare_parameter("pwm_neutral_us", 1500.0)
+        self.declare_parameter("pwm_min_us", 1100.0)
+        self.declare_parameter("pwm_max_us", 1900.0)
+        self.declare_parameter("pwm_deadband_us", 25.0)
         self.declare_parameter("max_xy_speed_mps", 0.75)
         self.declare_parameter("max_z_speed_mps", 0.35)
         self.declare_parameter("max_yaw_rate_rps", 0.75)
@@ -75,12 +107,21 @@ class KinematicDriver(Node):
         self.declare_parameter("initial_z", -0.28)
         self.declare_parameter("bottom_limit_z", -0.72)
         self.declare_parameter("surface_limit_z", -0.08)
+        self.declare_parameter("hook_collision_guard_enabled", True)
+        self.declare_parameter("hook_collision_body_radius_m", 0.17)
+        self.declare_parameter("hook_collision_margin_m", 0.035)
+        self.declare_parameter("hook_collision_body_half_height_m", 0.18)
+        self.declare_parameter("hook_collision_velocity_damping", 0.20)
 
         self.world_name = str(self.get_parameter("world_name").value)
         self.model_name = str(self.get_parameter("model_name").value)
         self.max_horizontal = float(self.get_parameter("max_horizontal_thrust_n").value)
         self.max_vertical = float(self.get_parameter("max_vertical_thrust_n").value)
         self.yaw_scale = float(self.get_parameter("yaw_scale").value)
+        self.pwm_neutral = float(self.get_parameter("pwm_neutral_us").value)
+        self.pwm_min = float(self.get_parameter("pwm_min_us").value)
+        self.pwm_max = float(self.get_parameter("pwm_max_us").value)
+        self.pwm_deadband = float(self.get_parameter("pwm_deadband_us").value)
         self.max_xy_speed = float(self.get_parameter("max_xy_speed_mps").value)
         self.max_z_speed = float(self.get_parameter("max_z_speed_mps").value)
         self.max_yaw_rate = float(self.get_parameter("max_yaw_rate_rps").value)
@@ -98,6 +139,21 @@ class KinematicDriver(Node):
         self.z = float(self.get_parameter("initial_z").value)
         self.bottom_limit_z = float(self.get_parameter("bottom_limit_z").value)
         self.surface_limit_z = float(self.get_parameter("surface_limit_z").value)
+        self.hook_collision_guard_enabled = parameter_as_bool(
+            self.get_parameter("hook_collision_guard_enabled").value
+        )
+        self.hook_collision_body_radius = float(
+            self.get_parameter("hook_collision_body_radius_m").value
+        )
+        self.hook_collision_margin = float(
+            self.get_parameter("hook_collision_margin_m").value
+        )
+        self.hook_collision_body_half_height = float(
+            self.get_parameter("hook_collision_body_half_height_m").value
+        )
+        self.hook_collision_velocity_damping = float(
+            self.get_parameter("hook_collision_velocity_damping").value
+        )
         self.yaw = 0.0
         self.roll = 0.0
         self.pitch = 0.0
@@ -105,10 +161,13 @@ class KinematicDriver(Node):
         self.body_vy = 0.0
         self.body_vz = 0.0
         self.yaw_rate = 0.0
+        self.last_pwm = [self.pwm_neutral] * 6
         self.last_thrusters = [0.0] * 6
+        self.last_pwm_time = 0.0
         self.last_update = time.monotonic()
 
         self.odom_pub = self.create_publisher(Odometry, "/model/gamantaray_rov/odometry", 10)
+        self.create_subscription(Float64MultiArray, "/rov/thruster_pwm", self.pwm_callback, 10)
         self.create_subscription(
             Float64MultiArray, "/rov/thruster_status", self.thruster_callback, 10
         )
@@ -223,8 +282,27 @@ class KinematicDriver(Node):
         ]
 
     def thruster_callback(self, msg: Float64MultiArray) -> None:
+        if time.monotonic() - self.last_pwm_time < 0.2:
+            return
         if len(msg.data) >= 6:
             self.last_thrusters = [float(v) for v in msg.data[:6]]
+
+    def pwm_callback(self, msg: Float64MultiArray) -> None:
+        if len(msg.data) < 6:
+            return
+        self.last_pwm = [float(v) for v in msg.data[:6]]
+        self.last_pwm_time = time.monotonic()
+        self.last_thrusters = [
+            pwm_to_thrust(
+                value,
+                self.max_horizontal if index < 4 else self.max_vertical,
+                self.pwm_neutral,
+                self.pwm_min,
+                self.pwm_max,
+                self.pwm_deadband,
+            )
+            for index, value in enumerate(self.last_pwm)
+        ]
 
     def update(self) -> None:
         now = time.monotonic()
@@ -268,11 +346,88 @@ class KinematicDriver(Node):
         self.x = max(-4.65, min(4.65, self.x))
         self.y = max(-4.65, min(4.65, self.y))
         self.z = max(self.bottom_limit_z, min(self.surface_limit_z, self.z))
+        if self.hook_collision_guard_enabled:
+            self.apply_hook_collision_guard()
 
         pose = self.make_pose()
         self.publish_odom(pose, self.body_vx, self.body_vy, self.body_vz, self.yaw_rate)
         self.set_model_pose(self.model_name, pose, 25)
         self.update_propeller_visuals(pose, dt)
+
+    def apply_hook_collision_guard(self) -> None:
+        half_height = max(0.02, self.hook_collision_body_half_height)
+        body_radius = max(0.02, self.hook_collision_body_radius)
+        margin = max(0.0, self.hook_collision_margin)
+        corrected = False
+
+        for center_x, center_y, z_min, z_max, radius in HOOK_VERTICAL_GUARDS:
+            if self.z + half_height < z_min or self.z - half_height > z_max:
+                continue
+            corrected = (
+                self.resolve_point_guard(center_x, center_y, body_radius + margin + radius)
+                or corrected
+            )
+
+        for (start, end, z_center, radius) in HOOK_PEG_GUARDS:
+            if abs(self.z - z_center) > half_height + 0.055:
+                continue
+            corrected = (
+                self.resolve_segment_guard(start, end, body_radius + margin + radius)
+                or corrected
+            )
+
+        if not corrected:
+            return
+
+        damping = clamp(self.hook_collision_velocity_damping, 0.0, 1.0)
+        self.body_vx *= damping
+        self.body_vy *= damping
+        self.x = clamp(self.x, -4.65, 4.65)
+        self.y = clamp(self.y, -4.65, 4.65)
+
+    def resolve_segment_guard(
+        self,
+        start: tuple[float, float],
+        end: tuple[float, float],
+        min_distance: float,
+    ) -> bool:
+        ax, ay = start
+        bx, by = end
+        dx = bx - ax
+        dy = by - ay
+        length_sq = dx * dx + dy * dy
+        if length_sq <= 1e-9:
+            return self.resolve_point_guard(ax, ay, min_distance)
+
+        t = clamp(((self.x - ax) * dx + (self.y - ay) * dy) / length_sq, 0.0, 1.0)
+        closest_x = ax + dx * t
+        closest_y = ay + dy * t
+        return self.resolve_point_guard(closest_x, closest_y, min_distance)
+
+    def resolve_point_guard(self, center_x: float, center_y: float, min_distance: float) -> bool:
+        dx = self.x - center_x
+        dy = self.y - center_y
+        distance = math.hypot(dx, dy)
+        if distance >= min_distance:
+            return False
+
+        if distance < 1e-6:
+            dx, dy = self.outward_from_wall(center_x, center_y)
+            distance = math.hypot(dx, dy)
+
+        scale = (min_distance - distance) / max(distance, 1e-6)
+        self.x += dx * scale
+        self.y += dy * scale
+        return True
+
+    @staticmethod
+    def outward_from_wall(center_x: float, center_y: float) -> tuple[float, float]:
+        dx = -center_x
+        dy = -center_y
+        if abs(dx) + abs(dy) < 1e-6:
+            return 1.0, 0.0
+        distance = math.hypot(dx, dy)
+        return dx / distance, dy / distance
 
     def make_pose(self) -> Pose:
         pose = Pose()

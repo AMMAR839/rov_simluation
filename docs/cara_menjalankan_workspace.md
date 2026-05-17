@@ -94,6 +94,15 @@ A                      -> tutup gripper
 B                      -> buka gripper
 ```
 
+Jalur geraknya sekarang:
+
+```text
+stik -> /rov/manual_cmd_vel -> /rov/cmd_vel -> thruster_allocator
+     -> /rov/thruster_pwm -> estimasi thrust -> driver gerak ROV
+```
+
+Jadi ROV tidak digerakkan langsung oleh `cmd_vel`. Input joystick diubah dulu menjadi PWM thruster seperti ESC ROV asli. Default PWM adalah `1500 us` netral, `1100 us` reverse penuh, dan `1900 us` forward penuh.
+
 ## 4. Jika Mapping Stik Terbalik atau Salah Axis
 
 Launch argument default:
@@ -266,6 +275,24 @@ Default:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue
 ```
 
+Varian gripper compact stabil yang bentuknya seperti joint/claw menyatu:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue_joint
+```
+
+Varian eksperimen joint fisika penuh, hanya untuk uji contact solver:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=github_blue_joint_experimental
+```
+
+Varian Beaumont dari referensi lama:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_variant:=beaumont
+```
+
 Model lama pembanding:
 
 ```bash
@@ -274,7 +301,10 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true rov_vari
 
 Penjelasan:
 
-- `github_blue` adalah default karena visual lebih rapi, propeller T200 jelas, dan gripper custom sudah menyatu dengan ROV.
+- `github_blue` adalah default karena visual lebih rapi, propeller T200 jelas, dan gripper custom compact sudah menyatu dengan ROV.
+- `github_blue_joint` sekarang dibuat sebagai varian stabil untuk command latihan. Body tetap BlueROV2-style, gripper compact tetap menyatu, dan rahang digerakkan kinematic oleh `gripper_manager` supaya tidak lepas/offset saat ROV digerakkan oleh driver kinematic/PWM.
+- `github_blue_joint_experimental` memakai rahang gripper sebagai link fisika dengan revolute joint dan joint position controller Gazebo. Ini hanya untuk eksperimen contact solver; jangan dijadikan varian utama latihan misi karena body ROV masih digerakkan kinematic sehingga joint dinamis bisa terlihat jitter atau lepas di GUI.
+- `beaumont` memakai model Beaumont dari referensi lama untuk pembanding visual.
 - `bluerov` adalah alternatif lama dari referensi lokal dan tetap bisa dipakai untuk pembanding.
 
 ## 9. Kontrol Keyboard Opsional
@@ -342,11 +372,13 @@ aligned=true
 ```
 
 5. Tekan tombol `A` untuk menutup gripper.
-6. Payload baru attached jika posisi benar dan jaw sudah menjepit.
+6. Payload baru attached jika posisi benar, alignment bertahan sebentar, dan jaw sudah menjepit.
 7. Bawa payload ke hook tujuan.
 8. Tekan tombol `B` untuk membuka gripper dan melepas payload.
 
-Jika payload dilepas cukup dekat dengan hook yang sesuai QR, status akan berubah menjadi `hung`. Pada kondisi ini lubang payload dikunci ke pasak hook dan payload akan berayun kecil lalu mereda, seperti benda yang baru digantung.
+Jika payload dilepas dengan lubang yang benar-benar sejajar dengan pasak hook sesuai QR, status akan berubah menjadi `hung`. Pada kondisi ini lubang payload dikunci ke pasak hook dan payload akan berayun kecil lalu mereda, seperti benda yang baru digantung. Jika belum sejajar, payload dilepas di posisi terakhir tetapi tidak dihitung tergantung.
+
+Hook sekarang memakai model PVC dinding dengan collision: backing dinding, clamp bibir kolam, pipa vertikal, elbow, dan peg horizontal terbuka. Ujung lancip/cone dan stopper silinder di ujung peg sudah dihapus supaya lubang payload bisa masuk dari ujung peg tanpa terhalang. Karena ROV default digerakkan dengan `set_pose`, launch juga mengaktifkan `hook_collision_guard_enabled=true` supaya body ROV tidak bebas menembus pipa/peg hook. Toleransi presisi release default `hook_snap_hole_tolerance_m=0.024` dan `hook_snap_axial_tolerance_m=0.026`. Guard peg saat payload masih dibawa memakai `hook_peg_pass_window_m=0.028`, sehingga pipa tidak bebas menembus bagian solid payload. Lubang payload harus berada di luar ujung bebas pipa lebih dulu lalu masuk sepanjang sumbu pipa (`hook_entry_tip_min_t=0.78`). Jika payload ditabrakkan dari kanan/kiri langsung ke tengah pipa atau area dekat ujung, status menjadi `side_entry_blocked` dan payload dikoreksi keluar secara lateral, bukan otomatis masuk. Setelah entry valid, gerakan kiri/kanan dikunci sebagai kontak lubang-pipa sehingga lubang diproyeksikan balik ke sumbu peg dan tidak keluar dari samping. Visual sisi lubang payload juga ditebalkan sehingga bukaan terlihat sekitar 3 cm dan tidak tampak bisa dimasuki dari kanan/kiri. Jika lubang sudah sempat masuk koridor peg lalu ROV bergeser sedikit, status release dapat menjadi `ready_latched` selama `hook_latch_memory_s=3.00` dengan toleransi latch `hook_latch_release_tolerance_m=0.036`. Jika QR belum terbaca, payload tetap bisa menggantung pada hook fisik yang sedang dimasuki; QR tetap dipakai untuk menentukan target misi. Jarak/yaw ROV tetap ditampilkan sebagai panduan operator, tetapi release fisik sekarang ditentukan oleh posisi lubang terhadap peg.
 
 Makna status:
 
@@ -356,6 +388,10 @@ collision=true/false   -> payload sedang kontak dengan body/capit atau tidak
 contact=claw           -> kontak dari capit
 contact=rov            -> kontak dari body ROV
 err=(x,y,z)            -> error posisi payload terhadap titik capture
+hook_aligned=true      -> lubang payload sudah sejajar dengan pasak hook
+hook_err=(rad,ax,rov,yaw) -> error radial lubang ke sumbu pasak, error kedalaman pasak, jarak ROV ke pose referensi, dan error yaw
+grip_stress=0..1       -> payload sedang tertarik jauh dari titik jepit atau tidak
+release_block=ready    -> siap dilepas ke hook
 ```
 
 Payload juga bisa bergeser saat ditabrak ROV/capit. Jika ingin melihat efek ini, turunkan ROV ke dekat dasar lalu dorong payload perlahan.
@@ -381,48 +417,58 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true 
 Profil autonomous yang tersedia:
 
 ```text
-full                   -> scan QR, ambil, bawa ke hook, release, surface
-carry_release_surface  -> sudah membawa payload, lalu ke hook, release, surface
-release_surface        -> sudah dekat hook, release payload, lalu surface
+full                   -> eksperimen end-to-end: scan QR, ambil, bawa ke hook, release, surface
+release_surface        -> mode misi nomor 5: sudah dekat hook, release payload, lalu surface
+carry_release_surface  -> mode eksperimen: sudah membawa payload, lalu autonomous ke hook, release, surface
 ```
 
-Untuk misi nomor 5 dari PDF, gunakan `release_surface` jika ROV sudah dekat hook:
+Untuk misi nomor 5 dari PDF, gunakan `release_surface`. Operator tetap mengambil payload dan membawa ROV ke area hook secara manual; autonomous hanya melakukan pelepasan valid lalu naik ke permukaan:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=release_surface payload_code:=C joystick:=false
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=release_surface payload_code:=C command_source:=manual require_qr_for_target:=true use_vision:=true
 ```
 
-Untuk skenario manual lalu autonomous dalam satu launch:
+Alur misi nomor 5:
 
-```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=release_surface payload_code:=C command_source:=manual
-```
-
-Pada command di atas, `mission_supervisor` sudah hidup tetapi menunggu sumber command menjadi `auto`. Bawa ROV dan payload ke dekat hook secara manual, lalu aktifkan autonomous:
+1. Jalankan launch di atas.
+2. Operator membaca QR dengan kamera depan sampai `/rov/qr_code` keluar.
+3. Operator menjepit payload secara manual.
+4. Operator membawa payload ke hook yang sesuai QR secara manual.
+5. Pantau `/rov/gripper_status` sampai `hook_aligned=true` atau `release_block=ready`.
+6. Pindahkan command ke autonomous:
 
 ```bash
 ros2 topic pub --once /rov/command_source std_msgs/msg/String "{data: auto}"
 ```
 
-Jika ROV sudah menjepit payload tetapi belum berada di hook, gunakan:
+Autonomous akan membuka gripper hanya kalau `hook_aligned=true`. Jika payload benar-benar tergantung (`hung`), ROV naik ke permukaan. Jika belum tergantung, ROV tidak langsung naik karena default `release_surface_on_timeout:=false`. Jika kamu pindah ke `auto` terlalu cepat, gripper tetap ditahan tertutup sampai alignment hook valid.
+
+Jika menjalankan potongan misi dari tengah dan kamera belum membaca QR dalam launch itu, kirim hasil QR sekali dari terminal lain untuk debug:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C joystick:=false
+ros2 topic pub --once /rov/qr_code std_msgs/msg/String "{data: C}"
 ```
 
-Jika ingin setelah payload terjepit langsung pindah autonomous dan bergerak ke gantungan, jalankan dari awal dengan:
+Untuk cek kenapa belum bisa release/hung:
 
 ```bash
-ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C command_source:=manual auto_start_on_attached:=true use_vision:=true
+ros2 topic echo /rov/gripper_status
 ```
 
-Alurnya:
+Field penting:
 
-1. Operator menggerakkan ROV manual.
-2. Operator scan QR dan menjepit payload.
-3. Saat `/rov/gripper_status` berubah menjadi `attached`, mission supervisor otomatis mengirim `/rov/command_source = auto`.
-4. ROV bergerak menuju hook sesuai `payload_code`.
-5. ROV membuka gripper, payload masuk mode `hung`, lalu ROV naik ke permukaan.
+- `hook_aligned=true/false`: lubang payload sudah sejajar dengan pasak hook atau belum.
+- `hook_err=(radial,axial,rov,yaw)`: error lubang ke sumbu pasak, error kedalaman pasak, jarak ROV ke pose referensi, dan error yaw. Release fisik hanya diblokir oleh radial/axial.
+- `release_block=hole_not_on_peg`: lubang belum masuk area pasak.
+- `release_block=peg_depth_bad`: lubang sejajar radial tetapi belum berada pada rentang panjang pasak.
+- `release_block=side_entry_blocked`: payload menyentuh pipa dari samping, bukan masuk dari ujung bebas pipa.
+- `release_block=unknown_qr`: QR belum terbaca, jadi target hook belum diketahui.
+
+Jika ROV sudah menjepit payload tetapi ingin menguji mode eksperimen yang bergerak sendiri ke hook, gunakan:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true mission_profile:=carry_release_surface payload_code:=C require_qr_for_target:=true joystick:=false
+```
 
 Untuk pengujian autonomous murni, pakai `joystick:=false`. Jika joystick tetap aktif, workspace memakai `cmd_vel_mux`: manual masuk ke `/rov/manual_cmd_vel`, autonomous masuk ke `/rov/auto_cmd_vel`, lalu mux meneruskan sumber aktif ke `/rov/cmd_vel`.
 
@@ -538,8 +584,11 @@ ros2 topic echo /rov/cmd_vel
 Cek output allocator:
 
 ```bash
+ros2 topic echo /rov/thruster_pwm
 ros2 topic echo /rov/thruster_status
 ```
+
+`/rov/thruster_pwm` berisi PWM ESC 6 thruster dalam microsecond. Nilai netral adalah sekitar `1500`, maju/mundur sekitar `1100..1900`. `/rov/thruster_status` adalah estimasi thrust Newton yang dihitung dari PWM, dipakai untuk debugging.
 
 Cek odometry:
 
@@ -657,6 +706,7 @@ ros2 topic echo /rov/active_command_source
 Cek apakah allocator menghasilkan thruster:
 
 ```bash
+ros2 topic echo /rov/thruster_pwm
 ros2 topic echo /rov/thruster_status
 ```
 
@@ -676,6 +726,7 @@ Jika `/rov/manual_cmd_vel` nol terus:
 Jika `/rov/cmd_vel` berubah tetapi ROV tidak bergerak:
 
 - cek `kinematic_driver` hidup dengan `ros2 node list`,
+- cek `/rov/thruster_pwm`,
 - cek `/rov/thruster_status`,
 - restart launch.
 
@@ -699,6 +750,74 @@ Payload hanya attached jika:
 - payload berada di depan capit, bukan sekadar dekat body.
 
 Jika `aligned=false`, gerakkan ROV sampai `err=(x,y,z)` kecil.
+
+Capit versi sekarang dibuat compact agar proporsional dengan ROV. Default aktif memakai `jaw_pivot_y_m:=0.050`, `jaw_open_angle_rad:=0.38`, dan `open_gap_m:=0.125`. Jika ingin membuka capit lebih lebar untuk eksperimen, ubah parameter ini dari launch:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
+  gripper_geometry:=manual \
+  jaw_pivot_y_m:=0.068 \
+  jaw_open_angle_rad:=0.52 \
+  capture_lateral_tolerance_m:=0.052
+```
+
+Jika payload dilepas tidak sejajar dengan hook, status akan menjadi `dropping` dan field `drop_vz` menunjukkan kecepatan tenggelam. Untuk membuat payload lebih lambat tenggelam:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
+  payload_drop_buoyancy_ratio:=0.82 \
+  payload_drop_terminal_speed_mps:=0.14
+```
+
+Default sekarang memakai `payload_contact_model:=strict`. Artinya payload tidak lagi dituntun otomatis ke tengah capit. Jika payload terdorong, itu karena body/frame/front tip/pad capit overlap dengan collision payload. Untuk mode latihan yang lebih mudah tetapi tidak seketat simulasi kontak, baru gunakan mode lama:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
+  payload_contact_model:=assisted
+```
+
+Status yang benar pada mode strict:
+
+```text
+contact=left_pad
+contact=right_pad
+contact=bilateral_clamp
+```
+
+Payload baru bisa benar-benar tercapit jika dua pad menekan bersamaan:
+
+```text
+pinched=true
+contact=bilateral_clamp
+```
+
+Jika hanya satu pad yang menyentuh, payload hanya tergeser karena tabrakan dan belum boleh `attached`. Parameter ketatnya bisa dituning:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
+  grip_min_bilateral_contact_s:=0.30 \
+  grip_clamp_margin_m:=0.004
+```
+
+Jika payload masih terasa meloncat terlalu keras saat dua pad menyentuh, kecilkan batas koreksi per update:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
+  payload_contact_max_step_m:=0.003
+```
+
+Nilai default sekarang `0.016` supaya overlap pada kecepatan operator yang agak tinggi cepat diselesaikan dan tidak terlihat tembus. Turunkan ke `0.003` hanya jika ingin gerak tabrakan jauh lebih halus tetapi lebih mudah terlihat overlap sementara. Kontak pad sekarang dihitung dari box `inner_pad_collision` aktual yang ikut rotasi rahang visual efektif, sehingga payload tidak akan dianggap terjepit hanya karena berada di dalam gap global rahang.
+
+Jika rahang visual masih terlihat terlalu dekat ke payload, naikkan clearance visual rahang:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true \
+  jaw_visual_stop_clearance_m:=0.014
+```
+
+Parameter ini hanya membatasi seberapa jauh visual rahang boleh menutup ketika payload berada di zona capit. Command motor/gripper tetap bisa bernilai `1.0`, tetapi tampilan rahang tidak terus digambar menembus payload.
+
+Payload A/B/C/D sekarang punya lubang gantung yang benar-benar terbuka. Visual hitam penutup lubang sudah dihapus, dan bukaan collision/visual diperbesar menjadi sekitar 3.4 cm supaya peg hook bisa masuk dengan clearance.
 
 ### Payload tidak bergeser saat ditabrak
 
