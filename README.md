@@ -174,6 +174,7 @@ Keyboard teleop sekarang dibuat momentary berbasis timeout: ROV bergerak saat to
 - `src/rov_gamantaray_control`: joystick driver, keyboard teleop, allocator thruster, kinematic driver, hydro wrench driver, gripper manager, dan mission supervisor.
 - `src/rov_gamantaray_vision`: deteksi QR dari kamera depan/dinding.
 - `src/rov_gamantaray_bringup`: launch utama.
+- `setup_asli_ROV`: kode dan script terpisah untuk ROV asli, dibagi menjadi ground station, onboard, hardware driver, dan firmware mikrokontroler.
 - `docs/reused_references.md`: ringkasan bagian yang dipakai dari PDF dan dua folder referensi.
 - `docs/kki_mission_alignment.md`: checklist kesesuaian workspace terhadap misi PDF.
 - `docs/validation_notes.md`: batas klaim simulasi, air, thruster, dan kebutuhan data uji asli.

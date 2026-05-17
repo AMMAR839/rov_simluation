@@ -4,6 +4,20 @@ Dokumen ini menjelaskan setup ROV asli untuk workspace `WS_ROV`. Fokusnya adalah
 
 Workspace simulasi tetap berguna untuk latihan misi. Untuk ROV asli, bagian Gazebo tidak dipakai. Yang dipakai adalah jalur ROS sampai output PWM, lalu PWM dikirim ke mikrokontroler untuk mengendalikan ESC dan thruster.
 
+Kode siap pakai untuk ROV asli sudah dipisahkan di:
+
+```text
+setup_asli_ROV/
+```
+
+Isi folder tersebut:
+
+- `setup_asli_ROV/gcs`: kode untuk laptop ground station/operator.
+- `setup_asli_ROV/onboard`: kode untuk komputer onboard di ROV.
+- `setup_asli_ROV/hardware`: node ROS serial PWM ke mikrokontroler.
+- `setup_asli_ROV/firmware`: firmware Arduino dan contoh STM32.
+- `setup_asli_ROV/common`: konfigurasi environment dan cek topic.
+
 ## 1. Arsitektur Sistem
 
 Alur kontrol ROV asli:
@@ -40,6 +54,144 @@ Thruster asli
 ```
 
 Stik tidak langsung menggerakkan ESC. Stik masuk ke ROS 2, ROS membuat nilai PWM, lalu mikrokontroler mengubah data serial dari ROS menjadi sinyal PWM ke ESC.
+
+## 1.1. Stik Di Ground Station Menggerakkan ROV Bagaimana?
+
+Kalau stik ada di ground station/laptop operator, ROV tetap bisa bergerak karena command stik dikirim lewat jaringan ROS 2 melalui tether Ethernet.
+
+Arsitektur yang disarankan:
+
+```text
+GROUND STATION / LAPTOP OPERATOR
+  - stik Xbox/gamepad
+  - rov_joystick
+  - kki_dashboard / GUI
+  - rqt_image_view jika perlu
+        |
+        |  ROS 2 DDS lewat tether Ethernet
+        v
+ONBOARD COMPUTER DI ROV
+  - cmd_vel_mux
+  - thruster_allocator
+  - serial_pwm_driver
+  - camera driver
+  - sensor driver
+        |
+        |  USB serial
+        v
+STM32 / Arduino / ESP32
+        |
+        |  PWM signal
+        v
+ESC + thruster
+```
+
+Jadi stik tidak perlu dicolok ke ROV. Stik dicolok ke laptop ground station. Node `rov_joystick` di laptop publish `/rov/manual_cmd_vel`. Karena laptop dan komputer onboard berada dalam satu jaringan ROS 2, komputer onboard menerima topic itu, lalu menjalankan `cmd_vel_mux`, `thruster_allocator`, dan `serial_pwm_driver`.
+
+### Setup Jaringan Ground Station Dan Onboard
+
+Gunakan tether Ethernet. Contoh IP statis:
+
+```text
+Ground station laptop : 192.168.10.1
+Onboard computer ROV  : 192.168.10.2
+Netmask               : 255.255.255.0
+```
+
+Cek koneksi:
+
+```bash
+ping 192.168.10.2
+```
+
+Di kedua komputer, pakai domain ROS yang sama:
+
+```bash
+export ROS_DOMAIN_ID=42
+export ROS_LOCALHOST_ONLY=0
+```
+
+Kalau memakai terminal baru, export ini harus diulang atau dimasukkan ke `~/.bashrc`.
+
+### Jalankan Di Onboard Computer ROV
+
+Di komputer yang ada di ROV, jalankan node hardware. Stik dan GUI dimatikan di sini karena ada di ground station.
+
+Mode aman dry-run:
+
+```bash
+cd /home/ammar/Documents/WS_ROV
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+export ROS_DOMAIN_ID=42
+export ROS_LOCALHOST_ONLY=0
+ros2 launch rov_gamantaray_bringup real_rov.launch.py joystick:=false kki_gui:=false hardware_dry_run:=true
+```
+
+Mode kirim ke STM32/ESC:
+
+```bash
+ros2 launch rov_gamantaray_bringup real_rov.launch.py joystick:=false kki_gui:=false \
+  hardware_dry_run:=false serial_port:=/dev/ttyACM0
+```
+
+### Jalankan Di Ground Station
+
+Di laptop operator, jalankan joystick:
+
+```bash
+cd /home/ammar/Documents/WS_ROV
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+export ROS_DOMAIN_ID=42
+export ROS_LOCALHOST_ONLY=0
+ros2 run rov_gamantaray_control rov_joystick --ros-args \
+  -p device_path:=/dev/input/js0 \
+  -p enable_button:=4 \
+  -p linear_scale:=0.30 \
+  -p vertical_scale:=0.25 \
+  -p yaw_scale:=0.25
+```
+
+Jalankan GUI di ground station:
+
+```bash
+ros2 run rov_gamantaray_control kki_dashboard
+```
+
+Jika kamera onboard publish ke `/rov/camera/wall/image` dan `/rov/camera/bottom/image`, GUI di ground station akan menerima gambar lewat ROS 2 network.
+
+### Cek Topic Antar Komputer
+
+Di ground station:
+
+```bash
+ros2 topic echo /rov/manual_cmd_vel
+```
+
+Di onboard:
+
+```bash
+ros2 topic echo /rov/manual_cmd_vel
+ros2 topic echo /rov/thruster_pwm
+ros2 topic echo /rov/hardware_pwm_status
+```
+
+Jika `/rov/manual_cmd_vel` muncul di ground station tetapi tidak muncul di onboard, masalahnya ada di jaringan ROS 2, bukan stik.
+
+### Ringkasan Jalur Command
+
+```text
+Stik di laptop
+  -> /rov/manual_cmd_vel
+  -> lewat tether Ethernet
+  -> onboard computer
+  -> /rov/cmd_vel
+  -> /rov/thruster_pwm
+  -> serial ke STM32
+  -> PWM ke ESC
+  -> thruster bergerak
+```
 
 ## 2. Hardware Yang Diperlukan
 
@@ -654,4 +806,3 @@ Kalimat aman untuk laporan:
 Kalimat tambahan:
 
 > Nilai PWM dan respon gerak pada hardware harus dikalibrasi ulang melalui uji kolam karena massa, buoyancy, drag, dan efek tether pada ROV nyata berbeda dari model simulasi.
-
