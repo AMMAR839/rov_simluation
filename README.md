@@ -84,6 +84,12 @@ Aktifkan deteksi QR:
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true
 ```
 
+Aktifkan GUI lomba KKI minimal dan tether:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true kki_gui:=true tether:=true
+```
+
 Jika ingin mengganti sumber kamera QR:
 
 ```bash
@@ -175,6 +181,8 @@ Keyboard teleop sekarang dibuat momentary berbasis timeout: ROV bergerak saat to
 - `docs/custom_rov_modeling_guide.md`: panduan membuat model ROV sendiri, termasuk thruster, propeller, kamera, lampu, gripper, dan variant launch.
 - `docs/metode_dan_logika_workspace.md`: penjelasan lengkap logika launch, kontrol, gripper, collision payload, QR, air, misi, dan batas klaim simulasi.
 - `docs/cara_menjalankan_workspace.md`: panduan lengkap menjalankan workspace, stik Xbox, keyboard, kamera QR, payload, autonomous, hydro, monitoring topic, dan troubleshooting.
+- `docs/migrasi_ke_sistem_nyata.md`: panduan memindahkan workspace simulasi ke ROV nyata, termasuk hardware yang perlu disiapkan, mapping topic, driver PWM, kamera, gripper, sensor, tether, dan urutan uji air.
+- `README_REAL_ROV.md`: ringkasan cara mengirim PWM dari ROS 2 ke mikrokontroler/ESC nyata.
 
 ## Kesesuaian Dengan Misi PDF
 
@@ -187,16 +195,47 @@ Berdasarkan `Sosialisasi KKI 2026 ROV.pdf`, workspace ini sudah mencakup bagian 
 - gripper untuk mengambil dan melepas payload,
 - hook/gantungan di sisi A/B/C/D,
 - teleoperation memakai stik,
+- GUI lomba minimal dengan dua kamera, QR, altitude, identitas tim/universitas, desain ROV, trajectory, dan status tether,
+- tether visual dinamis dari anchor permukaan ke ROV dengan status panjang/tension,
 - baseline autonomous untuk scan, pickup, menuju hook, release, dan surface.
 
 Bagian yang belum dibuat penuh seperti kebutuhan PDF:
 
-- GUI lengkap yang menampilkan dua kamera, hasil QR, ketinggian, waktu, identitas tim, desain ROV, dan trajectory,
 - screenshot/logging/replay otomatis,
 - alarm audio kedalaman,
 - randomisasi posisi A/B/C/D saat launch.
 
-Jadi statusnya: workspace ini sudah sesuai untuk simulasi teknis misi ROV dan pengembangan kontrol, tetapi belum menjadi paket lomba penuh karena GUI dan fitur advanced masih perlu ditambahkan.
+Jadi statusnya: workspace ini sudah sesuai untuk simulasi teknis misi ROV dan memiliki GUI minimal sesuai konsep KKI. Fitur advanced seperti logging/replay/alarm dan randomisasi arena masih bisa ditambahkan.
+
+## Migrasi Ke ROV Nyata
+
+Panduan lengkap migrasi dari simulasi ke hardware ada di:
+
+```bash
+docs/migrasi_ke_sistem_nyata.md
+```
+
+Ringkasan cara mengirim ke mikrokontroler/ESC nyata:
+
+```bash
+README_REAL_ROV.md
+```
+
+Ringkasnya, bagian ROS yang bisa dipakai langsung adalah joystick, `cmd_vel_mux`, `thruster_allocator`, QR detector, GUI KKI, dan sebagian mission supervisor. Bagian Gazebo seperti `kinematic_driver`, `gripper_manager` simulasi, `water_effects_driver`, `tether_driver`, dan `ros_gz_bridge` harus diganti dengan driver hardware nyata.
+
+Target hardware minimal:
+
+- komputer onboard ROS 2,
+- mikrokontroler/PWM controller,
+- ESC + 6 thruster,
+- driver gripper,
+- 2 kamera,
+- IMU/depth sensor,
+- leak sensor,
+- tether komunikasi/power,
+- fuse dan emergency stop.
+
+Output penting dari workspace untuk hardware adalah `/rov/thruster_pwm`; topic ini harus dibaca oleh driver hardware untuk mengirim PWM ke ESC.
 
 ## Metode Dan Algoritma
 
@@ -428,6 +467,32 @@ Kalau `rqt_image_view` belum ada:
 sudo apt install ros-jazzy-rqt-image-view
 ```
 
+## GUI Lomba KKI
+
+GUI khusus KKI tersedia sebagai node `kki_dashboard`. Tampilannya dibuat sebagai console operator modern untuk tim Gamantara, Universitas Gadjah Mada: top information bar, dua panel kamera, panel QR/status, altitude, trajectory map, desain ROV, dan footer status. GUI ini menampilkan:
+
+- kamera wall/front untuk QR,
+- kamera bottom,
+- hasil QR A/B/C/D dan valid/invalid,
+- altitude titik tengah ROV dari dasar kolam,
+- hari/tanggal/waktu, nama tim, dan universitas,
+- trajectory map dari titik awal sampai posisi sekarang,
+- desain/schematic ROV dan status tether.
+
+Jalankan bersama simulasi:
+
+```bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true use_vision:=true kki_gui:=true tether:=true
+```
+
+Jika hanya ingin mengecek launch tanpa membuka window GUI, tambahkan `kki_gui_window:=false`.
+
+Atau jalankan GUI saja setelah simulasi sudah hidup:
+
+```bash
+ros2 run rov_gamantaray_control kki_dashboard
+```
+
 Alurnya:
 
 1. Konversi ROS image ke OpenCV image dengan `cv_bridge`.
@@ -541,6 +606,7 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py mission_autonomy:=true 
 - `/rov/camera/wall/image`: kamera depan.
 - `/rov/camera/bottom/image`: kamera bawah.
 - `/rov/qr_code`: hasil deteksi QR.
+- `/rov/tether_status`: status panjang/tension tether visual.
 - `/model/gamantaray_rov/odometry`: odometry ROV.
 - `/rov/mission_state`: status autonomous.
 

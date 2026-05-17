@@ -13,8 +13,48 @@ from launch_ros.actions import Node
 VALID_PAYLOADS = {"A", "B", "C", "D"}
 
 
+def make_tether_models(segment_count: int) -> str:
+    parts = [
+        """
+    <model name="rov_tether_anchor">
+      <static>true</static>
+      <pose>-4.55 -4.55 0.08 0 0 0</pose>
+      <link name="link">
+        <visual name="deck_plate"><pose>0 0 0.025 0 0 0</pose><geometry><box><size>0.34 0.24 0.05</size></box></geometry><material><ambient>0.78 0.36 0.06 1</ambient><diffuse>0.95 0.48 0.08 1</diffuse></material></visual>
+        <visual name="spool"><pose>0 0 0.115 1.5708 0 0</pose><geometry><cylinder><radius>0.075</radius><length>0.20</length></cylinder></geometry><material><ambient>0.08 0.09 0.10 1</ambient><diffuse>0.13 0.14 0.15 1</diffuse></material></visual>
+        <visual name="orange_winding"><pose>0 0 0.115 1.5708 0 0</pose><geometry><cylinder><radius>0.083</radius><length>0.12</length></cylinder></geometry><material><ambient>0.95 0.38 0.05 1</ambient><diffuse>1.00 0.48 0.08 1</diffuse></material></visual>
+        <visual name="mast"><pose>0 0 0.28 0 0 0</pose><geometry><cylinder><radius>0.012</radius><length>0.38</length></cylinder></geometry><material><ambient>0.80 0.83 0.80 1</ambient><diffuse>0.90 0.92 0.88 1</diffuse></material></visual>
+      </link>
+    </model>"""
+    ]
+    for index in range(1, segment_count + 1):
+        parts.append(
+            f"""
+    <model name="rov_tether_segment_{index:02d}">
+      <static>true</static>
+      <pose>0 0 6 0 0 0</pose>
+      <link name="link">
+        <visual name="tether_bead">
+          <geometry><sphere><radius>0.015</radius></sphere></geometry>
+          <material><ambient>0.95 0.36 0.05 1</ambient><diffuse>1.0 0.48 0.08 1</diffuse><specular>0.25 0.16 0.08 1</specular></material>
+        </visual>
+      </link>
+    </model>"""
+        )
+    return "\n".join(parts)
+
+
 def launch_setup(context, *args, **kwargs):
     gui = LaunchConfiguration("gui").perform(context).lower() == "true"
+    kki_gui = LaunchConfiguration("kki_gui")
+    kki_gui_window = LaunchConfiguration("kki_gui_window")
+    team_name = LaunchConfiguration("team_name")
+    university_name = LaunchConfiguration("university_name")
+    tether = LaunchConfiguration("tether")
+    tether_enabled = tether.perform(context).lower() == "true"
+    tether_segment_count = LaunchConfiguration("tether_segment_count")
+    tether_segment_count_value = int(tether_segment_count.perform(context))
+    tether_max_length_m = LaunchConfiguration("tether_max_length_m")
     use_vision = LaunchConfiguration("use_vision")
     qr_image_topic = LaunchConfiguration("qr_image_topic")
     mission_autonomy = LaunchConfiguration("mission_autonomy")
@@ -362,6 +402,10 @@ def launch_setup(context, *args, **kwargs):
         .replace("@PHYSICS_STEP_SIZE@", physics_step_size)
         .replace("@HYDRO_WORLD_PLUGINS@", hydro_world_plugins)
         .replace("@KINEMATIC_PROP_VISUALS@", kinematic_prop_visuals)
+        .replace(
+            "@TETHER_MODELS@",
+            make_tether_models(tether_segment_count_value) if tether_enabled else "",
+        )
     )
     generated_world.write_text(world_text, encoding="utf-8")
 
@@ -578,6 +622,21 @@ def launch_setup(context, *args, **kwargs):
                 ],
             ),
             Node(
+                package="rov_gamantaray_control",
+                executable="tether_driver",
+                name="tether_driver",
+                output="screen",
+                condition=IfCondition(tether),
+                parameters=[
+                    {
+                        "use_sim_time": True,
+                        "world_name": "kki_rov_pool",
+                        "segment_count": tether_segment_count,
+                        "max_length_m": tether_max_length_m,
+                    }
+                ],
+            ),
+            Node(
                 package="rov_gamantaray_vision",
                 executable="qr_detector",
                 name="qr_detector",
@@ -587,6 +646,21 @@ def launch_setup(context, *args, **kwargs):
                     {
                         "use_sim_time": True,
                         "image_topic": qr_image_topic,
+                    }
+                ],
+            ),
+            Node(
+                package="rov_gamantaray_control",
+                executable="kki_dashboard",
+                name="kki_dashboard",
+                output="screen",
+                condition=IfCondition(kki_gui),
+                parameters=[
+                    {
+                        "use_sim_time": True,
+                        "team_name": team_name,
+                        "university_name": university_name,
+                        "window_enabled": kki_gui_window,
                     }
                 ],
             ),
@@ -645,6 +719,13 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument("gui", default_value="true"),
+            DeclareLaunchArgument("kki_gui", default_value="false"),
+            DeclareLaunchArgument("kki_gui_window", default_value="true"),
+            DeclareLaunchArgument("team_name", default_value="Gamantara"),
+            DeclareLaunchArgument("university_name", default_value="Universitas Gadjah Mada"),
+            DeclareLaunchArgument("tether", default_value="true"),
+            DeclareLaunchArgument("tether_segment_count", default_value="28"),
+            DeclareLaunchArgument("tether_max_length_m", default_value="12.0"),
             DeclareLaunchArgument("payload_code", default_value="A"),
             DeclareLaunchArgument("use_vision", default_value="false"),
             DeclareLaunchArgument("qr_image_topic", default_value="/rov/camera/wall/image"),

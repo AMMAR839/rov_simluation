@@ -24,6 +24,8 @@ setup(
             "hydro_wrench_driver = rov_gamantaray_control.hydro_wrench_driver:main",
             "gripper_manager = rov_gamantaray_control.gripper_manager:main",
             "water_effects_driver = rov_gamantaray_control.water_effects_driver:main",
+            "tether_driver = rov_gamantaray_control.tether_driver:main",
+            "kki_dashboard = rov_gamantaray_control.kki_dashboard:main",
             "mission_supervisor = rov_gamantaray_control.mission_supervisor:main",
             "rov_teleop_keyboard = rov_gamantaray_control.teleop_keyboard:main",
             "rov_joystick = rov_gamantaray_control.joystick_driver:main",

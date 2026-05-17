@@ -418,5 +418,6 @@
       <uri>model://held_payload_collision_proxy</uri>
       <pose>0 0 6 0 0 0</pose>
     </include>
+    @TETHER_MODELS@
   </world>
 </sdf>

@@ -236,7 +236,32 @@ Cara menggunakan QR:
 4. Cek `/rov/qr_code`.
 5. Jika QR terbaca, huruf `A/B/C/D` akan dipublish.
 
-## 7. Memilih Payload A/B/C/D
+## 7. Jalankan GUI Lomba KKI
+
+GUI lomba tersedia lewat `kki_gui:=true`. Layout-nya dibuat sebagai console operator modern untuk tim Gamantara, Universitas Gadjah Mada: top information bar, dua kamera dalam satu layar, QR/status, altitude dari dasar kolam, trajectory map, desain ROV, dan footer status. GUI juga menampilkan waktu, status gripper, mission, dan tether.
+
+```bash
+cd /home/ammar/Documents/WS_ROV
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true joystick_device:=/dev/input/js0 use_vision:=true kki_gui:=true tether:=true
+```
+
+Jika ingin menjalankan simulasi untuk test tanpa membuka window GUI, pakai `kki_gui_window:=false`.
+
+Jika simulasi sudah berjalan dan hanya ingin membuka GUI:
+
+```bash
+ros2 run rov_gamantaray_control kki_dashboard
+```
+
+Tether aktif default. Status tether bisa dilihat dari:
+
+```bash
+ros2 topic echo /rov/tether_status
+```
+
+## 8. Memilih Payload A/B/C/D
 
 Default payload adalah A.
 
@@ -267,7 +292,7 @@ kki_payload_C
 kki_payload_D
 ```
 
-## 8. Memilih Model ROV
+## 9. Memilih Model ROV
 
 Default:
 
@@ -307,7 +332,7 @@ Penjelasan:
 - `beaumont` memakai model Beaumont dari referensi lama untuk pembanding visual.
 - `bluerov` adalah alternatif lama dari referensi lokal dan tetap bisa dipakai untuk pembanding.
 
-## 9. Kontrol Keyboard Opsional
+## 10. Kontrol Keyboard Opsional
 
 Keyboard hanya disarankan untuk backup. Masalah utamanya: terminal keyboard harus fokus. Kalau fokus ada di Gazebo, tombol tidak masuk ke node keyboard.
 
@@ -346,7 +371,7 @@ Catatan penting:
 - Jangan menjalankan joystick dan keyboard bersamaan jika tidak perlu.
 - Joystick dan keyboard sama-sama masuk jalur `/rov/manual_cmd_vel`; kalau keduanya aktif, input manualnya bisa saling menimpa.
 
-## 10. Cara Mengambil Payload Dengan Gripper
+## 11. Cara Mengambil Payload Dengan Gripper
 
 Jalankan simulasi:
 
@@ -406,7 +431,7 @@ ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true hanging_
 - `hanging_release_velocity_gain`: makin besar, gerakan ROV saat release lebih kuat membuat payload berayun.
 - `hanging_max_angle_rad`: batas maksimum sudut ayunan.
 
-## 11. Mission Autonomous Sederhana
+## 12. Mission Autonomous Sederhana
 
 Aktifkan mission supervisor:
 
@@ -510,7 +535,7 @@ Catatan:
 - State `release_payload` membaca `/rov/gripper_status`. Kalau gripper melaporkan `hung`, ROV lanjut ke `surface`.
 - Cocok untuk kerangka awal pengembangan.
 
-## 12. Mode Hydro Eksperimental
+## 13. Mode Hydro Eksperimental
 
 Mode default adalah kinematic. Mode hydro tersedia untuk visual bawah air dengan kontrol tetap responsif:
 
@@ -561,7 +586,7 @@ Batasan hydro:
 - belum dikalibrasi dengan ROV asli,
 - belum menjadi jalur utama lomba.
 
-## 13. Perintah Cek Topik
+## 14. Perintah Cek Topik
 
 Lihat semua topic:
 
@@ -614,7 +639,7 @@ Cek mission:
 ros2 topic echo /rov/mission_state
 ```
 
-## 14. Perintah Manual Publish untuk Tes
+## 15. Perintah Manual Publish untuk Tes
 
 Tes maju lewat jalur manual:
 
@@ -664,7 +689,7 @@ Buka gripper:
 ros2 topic pub --once /rov/gripper_cmd std_msgs/msg/Float64 "{data: 0.0}"
 ```
 
-## 15. Troubleshooting
+## 16. Troubleshooting
 
 ### Stik tidak terbaca
 
@@ -899,7 +924,7 @@ source install/setup.bash
 ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py joystick:=true
 ```
 
-## 16. Urutan Run yang Disarankan Untuk Latihan
+## 17. Urutan Run yang Disarankan Untuk Latihan
 
 Urutan paling aman:
 
@@ -942,7 +967,7 @@ Dengan urutan ini, operator bisa:
 5. memindahkan payload ke hook,
 6. melepas payload.
 
-## 17. Perintah Validasi Setelah Edit Kode
+## 18. Perintah Validasi Setelah Edit Kode
 
 Validasi Python:
 
@@ -972,7 +997,7 @@ timeout 12s ros2 launch rov_gamantaray_bringup kki_rov_sim.launch.py gui:=false 
 
 Exit code `124` dari command `timeout` normal jika proses dihentikan oleh timeout. Yang penting tidak ada error Python atau crash sebelum timeout.
 
-## 18. Ringkasan Command Utama
+## 19. Ringkasan Command Utama
 
 Paling sering dipakai:
 
