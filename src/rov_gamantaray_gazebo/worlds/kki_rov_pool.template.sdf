@@ -13,6 +13,7 @@
     </plugin>
     @HYDRO_WORLD_PLUGINS@
 
+
     <scene>
       <ambient>0.07 0.16 0.19 1</ambient>
       <background>0.005 0.030 0.045 1</background>
@@ -298,6 +299,7 @@
         <visual name="caustic_9"><pose>1.5 3.3 0 0 0 -0.26</pose><geometry><box><size>2.9 0.018 0.004</size></box></geometry><material><ambient>0.55 0.95 1.0 0.35</ambient><diffuse>0.55 0.95 1.0 0.35</diffuse></material><transparency>0.62</transparency></visual>
       </link>
     </model>
+
 
     <model name="pool_wall_north">
       <static>true</static>

@@ -431,6 +431,7 @@ def launch_setup(context, *args, **kwargs):
         "/rov/camera/wall/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
         "/rov/camera/bottom/image@sensor_msgs/msg/Image[gz.msgs.Image",
         "/rov/camera/bottom/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo",
+
         "/rov/thruster1/cmd@std_msgs/msg/Float64]gz.msgs.Double",
         "/rov/thruster2/cmd@std_msgs/msg/Float64]gz.msgs.Double",
         "/rov/thruster3/cmd@std_msgs/msg/Float64]gz.msgs.Double",
